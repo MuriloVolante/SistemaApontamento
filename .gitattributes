@@ -1,0 +1,5 @@
+# Normaliza as quebras de linha no repositorio
+* text=auto
+
+# Arquivos de lote do Windows precisam de CRLF para funcionar
+*.bat text eol=crlf

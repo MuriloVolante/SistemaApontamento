@@ -1,0 +1,11 @@
+node_modules
+.next
+out
+.env
+.env.local
+*.tsbuildinfo
+next-env.d.ts
+.vercel
+
+# Banco local (SQLite) — cada máquina tem o seu
+dados/
