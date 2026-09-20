@@ -10,6 +10,7 @@ import type {
   FiltroConsulta,
   LinhaApontamento,
   Sessao,
+  SessaoAtiva,
   Status,
   Tipo,
 } from "./tipos";
@@ -176,6 +177,17 @@ export class RepositorioSqlite implements Repositorio {
       | (Omit<Sessao, "status"> & { status: Status })
       | undefined;
     return s ?? null;
+  }
+
+  async listarSessoesAtivas(): Promise<SessaoAtiva[]> {
+    return this.db
+      .prepare(
+        `select s.*, e.nome as etapa_nome
+           from sessoes s
+           join etapas e on e.id = s.etapa_id
+          order by s.segmento_inicio asc`
+      )
+      .all() as SessaoAtiva[];
   }
 
   async criarSessao(sessao: Sessao): Promise<void> {

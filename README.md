@@ -34,7 +34,7 @@ de ambiente**. O banco é um arquivo SQLite criado sozinho em
 3. Para trocar a etapa depois, use a seta **←** no canto superior esquerdo da
    tela do operador.
 4. O painel fica em `http://localhost:3000/painel`, ou pelo botão **Painel** no
-   canto superior direito.
+   canto superior direito. Ele tem quatro telas na barra de navegação.
 5. Para simular outra máquina, use uma janela anônima (o `localStorage` é separado).
 
 ### Mexer no banco
@@ -109,19 +109,45 @@ máquina aponta — nunca estado nem tempo decorrido.
 
 ## Painel de gestão
 
-- **Filtros:** OS (busca parcial), Etapa, Tipo e Data. A data é interpretada no
-  fuso do navegador, então "hoje" é o dia local de quem consulta.
-- **Cards:** Tempo Total, Tempo em Operação e Tempo em Pausa, em `HH:MM:SS`,
-  recalculados a cada mudança de filtro — vêm da mesma consulta que alimenta a tabela.
-- **Tabela:** 50 registros por página, com navegação no rodapé. Os cards e os
-  relatórios continuam considerando o filtro inteiro, não apenas a página aberta.
-- **Relatório Analítico:** espelho da tabela filtrada, com os três totais no cabeçalho.
-- **Relatório Sintético:** modal com Data Início, Data Fim, OS e Etapa; gera, por
-  etapa, tempo total, tempo em operação e tempo pausado, com linha de total
-  consolidado.
-- **Gestão de etapas** (rodapé): listar, adicionar, renomear, inativar e reativar.
-  Etapa com apontamentos vinculados não pode ser excluída, apenas inativada.
-  Etapa inativa some da tela do operador e continua nos filtros e relatórios.
+Quatro telas, em uma barra de navegação no topo.
+
+### Dashboard
+
+O que está acontecendo agora, sem nenhum filtro para preencher:
+
+- os três cards — Tempo Total, Tempo em Operação e Tempo em Pausa — com os
+  totais **do dia de hoje**;
+- um card por **OS em andamento**, com o número da OS, a etapa, o cronômetro do
+  estado atual e, quando pausada, o motivo da parada.
+
+Reconsulta o banco a cada 15 segundos e sempre que a aba volta ao primeiro plano.
+Os cronômetros são recalculados por diferença de timestamps, igual à tela do
+operador.
+
+### Histórico
+
+A tabela completa de apontamentos, com filtros de OS (busca parcial), Etapa,
+Tipo e Data, os três cards recalculados a cada mudança de filtro, e paginação de
+50 registros. O botão **Exportar esta consulta** gera o relatório analítico
+exatamente com o que está filtrado.
+
+A data é interpretada no fuso do navegador, então "hoje" é o dia local de quem
+consulta.
+
+### Etapas
+
+Listar, adicionar, renomear, inativar e reativar. Etapa com apontamentos
+vinculados não pode ser excluída, apenas inativada. Etapa inativa some da tela do
+operador e continua no histórico e nos relatórios.
+
+### Relatórios
+
+Um formulário de parâmetros — Data Início, Data Fim, OS e Etapa — que vale para
+os dois relatórios:
+
+- **Analítico:** um apontamento por linha, com os três totais no cabeçalho.
+- **Sintético:** uma linha por etapa com tempo total, tempo em operação e tempo
+  pausado, fechando com o total consolidado.
 
 ---
 
@@ -131,7 +157,10 @@ máquina aponta — nunca estado nem tempo decorrido.
 |---|---|
 | `/` | Tela do operador, já na etapa configurada nesta máquina. |
 | `/configurar` | Escolha da etapa da máquina. Usada uma vez por terminal. |
-| `/painel` | Painel de gestão. |
+| `/painel` | Dashboard: totais do dia e OSs em andamento. |
+| `/painel/historico` | Tabela completa, com filtros e paginação. |
+| `/painel/etapas` | Cadastro de etapas. |
+| `/painel/relatorios` | Geração dos dois relatórios em PDF. |
 
 ---
 
@@ -163,11 +192,16 @@ src/
     consultas.ts        server actions: consultas e totais do painel
     page.tsx            tela do operador
     configurar/         escolha da etapa da máquina
-    painel/             painel de gestão
+    painel/
+      layout.tsx        barra de navegação do painel
+      page.tsx          Dashboard
+      Totais.tsx        os três cards, usados por Dashboard e Histórico
+      historico/        tabela com filtros e paginação
+      etapas/           cadastro de etapas
+      relatorios/       parâmetros e geração dos PDFs
     globals.css         estilos (operador com alvos grandes de toque)
   components/
     GestaoEtapas.tsx    listar / adicionar / renomear / inativar
-    ModalSintetico.tsx  parâmetros do relatório sintético
   lib/
     repositorio.ts      interface da camada de dados + escolha do backend
     repo-sqlite.ts      implementação local (padrão)

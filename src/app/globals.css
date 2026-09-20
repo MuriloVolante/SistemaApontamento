@@ -366,7 +366,86 @@ textarea.op-campo {
 }
 
 /* ---------------------------------------------------------------------
-   Painel de gestão
+   Painel de gestão — navbar
+   --------------------------------------------------------------------- */
+
+.navbar {
+  background: var(--grafite);
+  border-bottom: 3px solid var(--grafite-escuro);
+}
+
+.navbar-interna {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  min-height: 48px;
+  flex-wrap: wrap;
+}
+
+.navbar-marca {
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.4px;
+  color: #aeb9c4;
+  white-space: nowrap;
+}
+
+.navbar-itens {
+  display: flex;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  gap: 2px;
+  flex: 1 1 auto;
+}
+
+.navbar-link {
+  display: inline-flex;
+  align-items: center;
+  height: 48px;
+  padding: 0 16px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #d3dae1;
+  text-decoration: none;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -3px;
+  white-space: nowrap;
+}
+
+.navbar-link:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: #fff;
+}
+
+.navbar-link--ativo {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+  border-bottom-color: #fff;
+}
+
+.navbar-saida {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #cdd5dc;
+  text-decoration: none;
+  padding: 5px 10px;
+  border: 1px solid #5d6974;
+  border-radius: var(--raio);
+  white-space: nowrap;
+}
+
+.navbar-saida:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+/* ---------------------------------------------------------------------
+   Painel de gestão — conteúdo
    --------------------------------------------------------------------- */
 
 .painel {
@@ -392,6 +471,11 @@ textarea.op-campo {
   text-transform: uppercase;
   letter-spacing: 0.4px;
   margin: 0;
+}
+
+.painel-legenda {
+  font-size: 0.85rem;
+  color: var(--texto-fraco);
 }
 
 .cartao {
@@ -729,4 +813,106 @@ table.tabela tbody tr:last-child td {
   body {
     background: #fff;
   }
+}
+
+/* ---------------------------------------------------------------------
+   Dashboard — OSs em andamento
+   --------------------------------------------------------------------- */
+
+.os-grade {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(258px, 1fr));
+  gap: 12px;
+}
+
+.os-cartao {
+  border: 1px solid var(--borda);
+  border-left: 5px solid var(--grafite);
+  border-radius: var(--raio);
+  padding: 12px 14px;
+  background: var(--superficie-2);
+}
+
+.os-cartao--andamento {
+  border-left-color: var(--verde);
+  background: #eef5f0;
+}
+
+.os-cartao--pausado {
+  border-left-color: var(--ambar);
+  background: #f9f2e4;
+}
+
+.os-cartao-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+/* A etiqueta nunca quebra em duas linhas; quem cede espaço é o número. */
+.os-cartao-topo .etiqueta {
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+
+.os-numero {
+  font-size: 1.1rem;
+  font-weight: 700;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.os-etapa {
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--texto-fraco);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.os-cronometro {
+  font-size: 1.9rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  line-height: 1.1;
+  margin: 4px 0 0;
+}
+
+.os-rodape {
+  font-size: 0.82rem;
+  color: var(--texto-fraco);
+  margin: 6px 0 0;
+  padding-top: 6px;
+  border-top: 1px solid var(--borda);
+  overflow-wrap: anywhere;
+}
+
+/* ---------------------------------------------------------------------
+   Relatórios
+   --------------------------------------------------------------------- */
+
+.relatorios-grade {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 14px;
+}
+
+.relatorio-cartao {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin-bottom: 0;
+}
+
+.relatorio-texto {
+  font-size: 0.9rem;
+  color: var(--texto-fraco);
+  line-height: 1.45;
+  margin: 0 0 14px;
+  flex: 1 1 auto;
 }

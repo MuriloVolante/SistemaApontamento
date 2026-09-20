@@ -7,6 +7,7 @@ import type {
   FiltroConsulta,
   LinhaApontamento,
   Sessao,
+  SessaoAtiva,
 } from "./tipos";
 
 /**
@@ -111,6 +112,24 @@ export class RepositorioSupabase implements Repositorio {
       .maybeSingle();
     if (error) throw new Error(error.message);
     return (data as Sessao) ?? null;
+  }
+
+  async listarSessoesAtivas(): Promise<SessaoAtiva[]> {
+    const { data, error } = await this.db
+      .from("sessoes")
+      .select("etapa_id, numero_os, status, segmento_inicio, motivo, etapas(nome)")
+      .order("segmento_inicio", { ascending: true });
+    if (error) throw new Error(error.message);
+
+    type Bruto = Omit<SessaoAtiva, "etapa_nome"> & {
+      etapas: { nome: string } | { nome: string }[] | null;
+    };
+
+    return ((data ?? []) as unknown as Bruto[]).map((s) => {
+      const { etapas, ...resto } = s;
+      const nome = Array.isArray(etapas) ? etapas[0]?.nome ?? "" : etapas?.nome ?? "";
+      return { ...resto, etapa_nome: nome };
+    });
   }
 
   async criarSessao(sessao: Sessao): Promise<void> {

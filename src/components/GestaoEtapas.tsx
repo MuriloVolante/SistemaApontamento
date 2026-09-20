@@ -51,8 +51,6 @@ export default function GestaoEtapas({ etapas, aoMudar }: Props) {
 
   return (
     <section className="cartao">
-      <h2 className="cartao-titulo">Gestão de etapas</h2>
-
       <div className="linha-acoes" style={{ marginBottom: 16 }}>
         <input
           className="campo"

@@ -2,7 +2,14 @@
 
 import { agora, repositorio, ErroUnicidade } from "@/lib/repositorio";
 import { diferencaEmSegundos } from "@/lib/tempo";
-import type { Etapa, Sessao, EstadoEtapa, Resultado, Tipo } from "@/lib/tipos";
+import type {
+  Etapa,
+  Sessao,
+  EstadoEtapa,
+  PainelAtivo,
+  Resultado,
+  Tipo,
+} from "@/lib/tipos";
 
 // =====================================================================
 // Etapas
@@ -190,4 +197,14 @@ export async function finalizar(etapaId: string): Promise<Resultado<EstadoEtapa>
   await repo.excluirSessao(etapaId);
 
   return { ok: true, dados: await obterEstado(etapaId) };
+}
+
+/**
+ * Apontamentos em curso em todas as etapas, para o dashboard. `agora` é o
+ * relógio do servidor: o navegador o usa para recalcular cada cronômetro por
+ * diferença de timestamps, igual à tela do operador.
+ */
+export async function listarSessoesAtivas(): Promise<PainelAtivo> {
+  const sessoes = await (await repositorio()).listarSessoesAtivas();
+  return { sessoes, agora: agora().toISOString() };
 }

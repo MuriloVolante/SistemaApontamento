@@ -4,6 +4,7 @@ import type {
   FiltroConsulta,
   LinhaApontamento,
   Sessao,
+  SessaoAtiva,
   Status,
 } from "./tipos";
 
@@ -36,6 +37,8 @@ export interface Repositorio {
   contarApontamentosDaEtapa(id: string): Promise<number>;
 
   obterSessao(etapaId: string): Promise<Sessao | null>;
+  /** Todas as sessoes em curso, com o nome da etapa (dashboard). */
+  listarSessoesAtivas(): Promise<SessaoAtiva[]>;
   criarSessao(sessao: Sessao): Promise<void>;
   alterarSessao(etapaId: string, alteracao: AlteracaoSessao): Promise<void>;
   excluirSessao(etapaId: string): Promise<void>;

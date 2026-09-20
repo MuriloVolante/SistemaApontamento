@@ -79,3 +79,14 @@ export interface ResultadoConsulta {
   linhas: LinhaApontamento[];
   totais: Totais;
 }
+
+/** Linha de `sessoes` enriquecida com o nome da etapa, para o dashboard. */
+export interface SessaoAtiva extends Sessao {
+  etapa_nome: string;
+}
+
+export interface PainelAtivo {
+  sessoes: SessaoAtiva[];
+  /** Relógio do servidor, para o navegador corrigir o próprio. */
+  agora: string;
+}
