@@ -159,6 +159,14 @@ export class RepositorioSupabase implements Repositorio {
     if (error) throw new Error(error.message);
   }
 
+  async contarApontamentos(): Promise<number> {
+    const { count, error } = await this.db
+      .from("apontamentos")
+      .select("id", { count: "exact", head: true });
+    if (error) throw new Error(error.message);
+    return count ?? 0;
+  }
+
   async consultarApontamentos(f: FiltroConsulta): Promise<LinhaApontamento[]> {
     let q = this.db
       .from("apontamentos")

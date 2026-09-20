@@ -643,8 +643,44 @@ table.tabela th {
   letter-spacing: 0.5px;
   color: #fff;
   background: var(--grafite);
-  padding: 8px 10px;
+  padding: 0;
   border-right: 1px solid var(--grafite-escuro);
+}
+
+/* Cabeçalho clicável: a coluna inteira ordena. */
+.ordenar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  width: 100%;
+  padding: 8px 10px;
+  font: inherit;
+  color: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.ordenar:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.ordenar--ativa {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.ordenar-seta {
+  font-size: 0.85rem;
+  line-height: 1;
+  opacity: 0.35;
+}
+
+.ordenar--ativa .ordenar-seta {
+  opacity: 1;
 }
 
 table.tabela th:last-child {
@@ -915,4 +951,24 @@ table.tabela tbody tr:last-child td {
   line-height: 1.45;
   margin: 0 0 14px;
   flex: 1 1 auto;
+}
+
+/* Sinal de conexão ao vivo do dashboard. */
+.sinal {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 6px;
+  border-radius: 50%;
+  vertical-align: middle;
+}
+
+.sinal--ligado {
+  background: var(--verde);
+  box-shadow: 0 0 0 3px rgba(28, 107, 57, 0.18);
+}
+
+.sinal--desligado {
+  background: var(--ambar);
+  box-shadow: 0 0 0 3px rgba(138, 90, 0, 0.18);
 }

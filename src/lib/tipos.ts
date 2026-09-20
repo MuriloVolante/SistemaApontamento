@@ -90,3 +90,12 @@ export interface PainelAtivo {
   /** Relógio do servidor, para o navegador corrigir o próprio. */
   agora: string;
 }
+
+/** Payload empurrado pelo servidor no fluxo SSE do dashboard. */
+export interface AtualizacaoAoVivo {
+  sessoes: SessaoAtiva[];
+  /** Relógio do servidor, para o navegador corrigir o próprio. */
+  agora: string;
+  /** Muda a cada apontamento gravado; sinaliza que os totais saíram do lugar. */
+  revisaoApontamentos: number;
+}

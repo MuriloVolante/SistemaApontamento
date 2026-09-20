@@ -243,6 +243,13 @@ export class RepositorioSqlite implements Repositorio {
       );
   }
 
+  async contarApontamentos(): Promise<number> {
+    const { total } = this.db.prepare("select count(*) as total from apontamentos").get() as {
+      total: number;
+    };
+    return total;
+  }
+
   async consultarApontamentos(f: FiltroConsulta): Promise<LinhaApontamento[]> {
     const condicoes: string[] = [];
     const valores: unknown[] = [];

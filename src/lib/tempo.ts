@@ -58,3 +58,12 @@ export function limitesLocais(
   }
   return limites;
 }
+
+/**
+ * Segundos decorridos desde a meia-noite local. Serve para ordenar as colunas
+ * de hora pelo que elas mostram (HH:MM:SS), e não pela data por tras delas.
+ */
+export function segundosDoDia(iso: string): number {
+  const d = new Date(iso);
+  return d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds();
+}

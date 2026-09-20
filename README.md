@@ -11,14 +11,23 @@ Sem login, sem identificação de operador. O registro é **Etapa + OS + Tipo + 
 
 **Dê dois cliques em `iniciar.bat`.** É só isso.
 
-Ele instala o que faltar (só na primeira vez), sobe o sistema e abre o navegador
-em `http://localhost:3000`. Para encerrar, feche a janela preta ou tecle `Ctrl+C`.
+Ele instala o que faltar, compila o sistema **em modo de produção** e abre o
+navegador em `http://localhost:3000`. Para encerrar, feche a janela preta ou
+tecle `Ctrl+C`.
 
-Se preferir o terminal:
+A compilação só acontece quando algum arquivo mudou desde a última vez, então a
+partida do dia a dia é imediata. Rodar em produção (e não em desenvolvimento) é
+o que deixa a navegação instantânea: as telas já vão compiladas e minificadas,
+em vez de serem montadas na primeira visita.
+
+Para mexer no código, use `desenvolver.bat`, que recarrega sozinho a cada
+alteração. É mais lento para navegar — é o preço do recarregamento automático.
+
+Pelo terminal:
 
 ```bash
 npm install
-npm run dev
+npm run iniciar
 ```
 
 Não há nada para configurar: **nenhuma conta, nenhum servidor, nenhuma variável
@@ -54,6 +63,7 @@ recriada e semeada na próxima execução.
 | Banco (local) | SQLite em arquivo, via `better-sqlite3` |
 | Banco (nuvem, opcional) | Supabase / Postgres |
 | Relatórios | jsPDF + jspdf-autotable |
+| Tempo real | Server-Sent Events (nativo, sem biblioteca) |
 
 Leituras e gravações passam por **server actions**, então todos os timestamps
 vêm do relógio do servidor — o cronômetro nunca depende do relógio do navegador
@@ -67,6 +77,21 @@ implementações que gravam o mesmo esquema. A escolha é automática:
 
 Ou seja: rodar local não exige decisão nenhuma, e migrar para a nuvem depois é
 só preencher duas variáveis — sem tocar em uma linha das telas.
+
+### Dimensionamento
+
+O sistema foi ajustado para o uso real: **até 18 computadores conectados** e
+**até 15 etapas** ao mesmo tempo.
+
+O ponto que mais importa nessa conta é o tempo real. Existe **um único** relógio
+no servidor lendo o banco uma vez por segundo, não um por navegador conectado —
+as 18 telas assinam esse mesmo relógio. E o pacote só é enviado quando o estado
+muda de verdade: com a fábrica parada, o tráfego é zero. Uma leitura envolve
+duas consultas sobre tabelas minúsculas (no máximo uma sessão por etapa, ou seja
+15 linhas), o que é irrelevante para o SQLite.
+
+Os cards de totais do dashboard só são reconsultados quando algum apontamento é
+gravado, detectado por um número de revisão que vem junto no pacote.
 
 ---
 
@@ -120,16 +145,31 @@ O que está acontecendo agora, sem nenhum filtro para preencher:
 - um card por **OS em andamento**, com o número da OS, a etapa, o cronômetro do
   estado atual e, quando pausada, o motivo da parada.
 
-Reconsulta o banco a cada 15 segundos e sempre que a aba volta ao primeiro plano.
-Os cronômetros são recalculados por diferença de timestamps, igual à tela do
-operador.
+O dashboard é **ao vivo**: não precisa atualizar a página. O servidor mantém um
+fluxo aberto (SSE, em `/api/ativos`) e empurra cada mudança em até um segundo —
+uma OS que começa, uma parada, uma retomada, um apontamento finalizado. O ponto
+verde ao lado do título indica que o canal está aberto; se cair, ele reconecta
+sozinho e, enquanto isso, a tela volta a consultar a cada 15 segundos para não
+ficar parada.
+
+Os cronômetros são recalculados por diferença de timestamps contra o relógio do
+servidor, igual à tela do operador.
 
 ### Histórico
 
 A tabela completa de apontamentos, com filtros de OS (busca parcial), Etapa,
 Tipo e Data, os três cards recalculados a cada mudança de filtro, e paginação de
-50 registros. O botão **Exportar esta consulta** gera o relatório analítico
-exatamente com o que está filtrado.
+50 registros.
+
+**Toda coluna ordena.** Clique no cabeçalho para ordenar por ele em ordem
+crescente, clique de novo para inverter. A seta mostra o sentido em que os
+valores crescem ao descer a lista: **↓ crescente**, **↑ decrescente**. A tabela
+abre ordenada por `#` crescente, que é a ordem cronológica. Cada coluna ordena
+pelo que a célula mostra — `Data` pela data, `Hora Início` e `Hora Fim` pela
+hora do dia, `Tempo Total` pela duração — e empates mantêm a ordem cronológica.
+
+O botão **Exportar esta consulta** gera o relatório analítico exatamente com o
+que está filtrado, na mesma ordem que está na tela.
 
 A data é interpretada no fuso do navegador, então "hoje" é o dia local de quem
 consulta.
@@ -184,10 +224,13 @@ Os dados do SQLite local **não** são migrados automaticamente.
 ## Estrutura
 
 ```
-iniciar.bat             duplo clique para subir o sistema
+iniciar.bat             duplo clique para subir o sistema (producao)
+desenvolver.bat         modo de desenvolvimento, para editar o codigo
+scripts/preparar.mjs    compila so quando algum arquivo mudou
 dados/apontamento.db    banco local (criado sozinho, fora do versionamento)
 src/
   app/
+    api/ativos/         fluxo SSE que alimenta o dashboard ao vivo
     actions.ts          server actions: etapas e ciclo do apontamento
     consultas.ts        server actions: consultas e totais do painel
     page.tsx            tela do operador
@@ -204,6 +247,7 @@ src/
     GestaoEtapas.tsx    listar / adicionar / renomear / inativar
   lib/
     repositorio.ts      interface da camada de dados + escolha do backend
+    transmissor.ts      relógio único que difunde mudanças para as telas
     repo-sqlite.ts      implementação local (padrão)
     repo-supabase.ts    implementação em nuvem (opcional)
     tempo.ts            HH:MM:SS, diferenças e limites de data

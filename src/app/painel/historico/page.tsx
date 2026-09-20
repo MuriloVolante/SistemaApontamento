@@ -5,11 +5,52 @@ import { listarEtapas } from "../../actions";
 import { consultarApontamentos } from "../../consultas";
 import CardsTotais from "../Totais";
 import { gerarPdfAnalitico } from "@/lib/pdf";
-import { formatarData, formatarDuracao, formatarHora, limitesLocais } from "@/lib/tempo";
+import {
+  dataLocalISO,
+  formatarData,
+  formatarDuracao,
+  formatarHora,
+  limitesLocais,
+  segundosDoDia,
+} from "@/lib/tempo";
 import type { Etapa, FiltroConsulta, LinhaApontamento, Totais } from "@/lib/tipos";
 
 const TOTAIS_ZERADOS: Totais = { total: 0, operacao: 0, pausa: 0 };
 const POR_PAGINA = 50;
+
+type Coluna =
+  | "num"
+  | "os"
+  | "etapa"
+  | "tipo"
+  | "data"
+  | "inicio"
+  | "fim"
+  | "duracao"
+  | "justificativa";
+
+type Direcao = "asc" | "desc";
+
+/**
+ * Cada coluna devolve o valor pelo qual ordena — sempre o que a célula mostra.
+ * `num` é a ordem natural da consulta (cronológica), representada pelo índice.
+ */
+const COLUNAS: Array<{
+  chave: Coluna;
+  rotulo: string;
+  numerica?: boolean;
+  valor: (l: LinhaApontamento, indice: number) => string | number;
+}> = [
+  { chave: "num", rotulo: "#", numerica: true, valor: (_l, i) => i },
+  { chave: "os", rotulo: "Número OS", valor: (l) => l.numero_os },
+  { chave: "etapa", rotulo: "Etapa", valor: (l) => l.etapa_nome },
+  { chave: "tipo", rotulo: "Tipo", valor: (l) => (l.tipo === "OPERACAO" ? "Operação" : "Pausa") },
+  { chave: "data", rotulo: "Data", valor: (l) => dataLocalISO(l.inicio) },
+  { chave: "inicio", rotulo: "Hora Início", numerica: true, valor: (l) => segundosDoDia(l.inicio) },
+  { chave: "fim", rotulo: "Hora Fim", numerica: true, valor: (l) => segundosDoDia(l.fim) },
+  { chave: "duracao", rotulo: "Tempo Total", numerica: true, valor: (l) => l.duracao_segundos },
+  { chave: "justificativa", rotulo: "Justificativa", valor: (l) => l.justificativa ?? "" },
+];
 
 export default function Historico() {
   const [etapas, setEtapas] = useState<Etapa[]>([]);
@@ -22,6 +63,8 @@ export default function Historico() {
   const [linhas, setLinhas] = useState<LinhaApontamento[]>([]);
   const [totais, setTotais] = useState<Totais>(TOTAIS_ZERADOS);
   const [pagina, setPagina] = useState(1);
+  const [coluna, setColuna] = useState<Coluna>("num");
+  const [direcao, setDirecao] = useState<Direcao>("asc");
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -70,12 +113,46 @@ export default function Historico() {
     };
   }, [filtro]);
 
+  // ---- ordenação ---------------------------------------------------------
+
+  const linhasOrdenadas = useMemo(() => {
+    const definicao = COLUNAS.find((c) => c.chave === coluna)!;
+    const sinal = direcao === "asc" ? 1 : -1;
+
+    // O índice original entra no par para servir de desempate estável e de
+    // valor da própria coluna "#".
+    return linhas
+      .map((linha, indice) => ({ linha, indice }))
+      .sort((a, b) => {
+        const va = definicao.valor(a.linha, a.indice);
+        const vb = definicao.valor(b.linha, b.indice);
+
+        const comparacao = definicao.numerica
+          ? (va as number) - (vb as number)
+          : String(va).localeCompare(String(vb), "pt-BR", { numeric: true, sensitivity: "base" });
+
+        // Empate mantém a ordem cronológica original.
+        return comparacao !== 0 ? comparacao * sinal : a.indice - b.indice;
+      })
+      .map((par) => par.linha);
+  }, [linhas, coluna, direcao]);
+
+  function ordenarPor(nova: Coluna) {
+    if (nova === coluna) {
+      setDirecao((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setColuna(nova);
+      setDirecao("asc");
+    }
+    setPagina(1);
+  }
+
   // ---- paginação (cards e PDF seguem sobre o filtro inteiro) -------------
 
-  const totalPaginas = Math.max(1, Math.ceil(linhas.length / POR_PAGINA));
+  const totalPaginas = Math.max(1, Math.ceil(linhasOrdenadas.length / POR_PAGINA));
   const paginaAtual = Math.min(pagina, totalPaginas);
   const primeiroIndice = (paginaAtual - 1) * POR_PAGINA;
-  const linhasDaPagina = linhas.slice(primeiroIndice, primeiroIndice + POR_PAGINA);
+  const linhasDaPagina = linhasOrdenadas.slice(primeiroIndice, primeiroIndice + POR_PAGINA);
 
   const nomeEtapaFiltro = etapas.find((e) => e.id === etapaId)?.nome ?? "Todas";
 
@@ -87,12 +164,13 @@ export default function Historico() {
   }
 
   function exportar() {
-    gerarPdfAnalitico(linhas, totais, [
+    // O PDF sai na mesma ordem que está na tela.
+    gerarPdfAnalitico(linhasOrdenadas, totais, [
       `OS: ${os.trim() ? `contém "${os.trim()}"` : "todas"}   |   Etapa: ${nomeEtapaFiltro}`,
       `Tipo: ${
         tipo === "OPERACAO" ? "Operação" : tipo === "PAUSA" ? "Pausa" : "Todos"
       }   |   Data: ${data ? formatarData(`${data}T12:00:00`) : "Todas"}`,
-      `Registros: ${linhas.length}`,
+      `Registros: ${linhasOrdenadas.length}`,
     ]);
   }
 
@@ -188,15 +266,29 @@ export default function Historico() {
           <table className="tabela">
             <thead>
               <tr>
-                <th>#</th>
-                <th>Número OS</th>
-                <th>Etapa</th>
-                <th>Tipo</th>
-                <th>Data</th>
-                <th>Hora Início</th>
-                <th>Hora Fim</th>
-                <th>Tempo Total</th>
-                <th>Justificativa</th>
+                {COLUNAS.map((c) => {
+                  const ativa = c.chave === coluna;
+                  return (
+                    <th
+                      key={c.chave}
+                      aria-sort={
+                        ativa ? (direcao === "asc" ? "ascending" : "descending") : "none"
+                      }
+                    >
+                      <button
+                        type="button"
+                        className={`ordenar ${ativa ? "ordenar--ativa" : ""}`}
+                        onClick={() => ordenarPor(c.chave)}
+                        title={`Ordenar por ${c.rotulo}`}
+                      >
+                        {c.rotulo}
+                        <span className="ordenar-seta" aria-hidden="true">
+                          {ativa ? (direcao === "asc" ? "↓" : "↑") : "↕"}
+                        </span>
+                      </button>
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
             <tbody>
@@ -234,7 +326,7 @@ export default function Historico() {
           <div className="paginacao">
             <span className="paginacao-info">
               Mostrando {primeiroIndice + 1}–{primeiroIndice + linhasDaPagina.length} de{" "}
-              {linhas.length} registros
+              {linhasOrdenadas.length} registros
             </span>
             <div className="paginacao-controles">
               <button
