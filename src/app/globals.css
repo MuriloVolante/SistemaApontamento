@@ -71,7 +71,8 @@
   --respiro: clamp(12px, 2.2vw, 22px);
 
   --fonte-texto-pilha: var(--fonte-texto), "Segoe UI", system-ui, Roboto, Arial, sans-serif;
-  --fonte-numero-pilha: var(--fonte-numero), ui-monospace, Consolas, monospace;
+  /* Números usam a mesma família, com algarismos tabulares. */
+  --fonte-numero-pilha: var(--fonte-texto-pilha);
 }
 
 /* ---------------------------------------------------------------------
@@ -609,22 +610,16 @@ textarea.op-campo {
 }
 
 .navbar-interna {
+  position: relative;
   max-width: 1420px;
   margin: 0 auto;
-  padding: 0 var(--respiro);
+  /* Espaço à direita reservado para o botão de saída, que é absoluto: assim
+     as abas ficam centradas na janela, e não deslocadas por ele. */
+  padding: 0 calc(var(--respiro) + 44px);
   display: flex;
   align-items: center;
-  gap: clamp(10px, 2vw, 24px);
+  justify-content: center;
   min-height: 52px;
-}
-
-.navbar-marca {
-  font-size: 0.78rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
-  color: #8fa3b3;
-  white-space: nowrap;
 }
 
 .navbar-itens {
@@ -633,7 +628,7 @@ textarea.op-campo {
   margin: 0;
   padding: 0;
   gap: 2px;
-  flex: 1 1 auto;
+  max-width: 100%;
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -687,26 +682,31 @@ textarea.op-campo {
   transform: scaleX(1);
 }
 
+/* Só a seta: volta para a tela de apontamento. */
 .navbar-saida {
-  font-size: 0.8rem;
-  font-weight: 500;
+  position: absolute;
+  right: var(--respiro);
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
   color: #c3d0da;
-  text-decoration: none;
-  padding: 7px 12px;
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: var(--raio);
-  white-space: nowrap;
   transition: background var(--rapido), border-color var(--rapido), color var(--rapido);
 }
 
 .navbar-saida:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.34);
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.38);
   color: #fff;
 }
 
-.navbar-saida-curto {
-  display: none;
+.navbar-saida:active {
+  transform: translateY(-50%) scale(0.94);
 }
 
 /* ---------------------------------------------------------------------
@@ -926,6 +926,64 @@ textarea.op-campo {
   background: var(--ambar);
 }
 
+/* Cards de total: viram botão de filtro na tela de Histórico. */
+.total-cartao--clicavel {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  appearance: none;
+}
+
+.total-cartao--clicavel:active {
+  transform: translateY(0) scale(0.995);
+}
+
+.total-icone {
+  position: absolute;
+  top: 13px;
+  right: 14px;
+  display: inline-flex;
+  color: var(--tinta-fraca);
+  opacity: 0.55;
+  transition: color var(--normal), opacity var(--normal);
+}
+
+.total-cartao:hover .total-icone {
+  opacity: 0.9;
+}
+
+/* Card aceso: o recorte que está valendo na tabela. */
+.total-cartao--aceso {
+  border-color: transparent;
+  box-shadow: var(--sombra-m);
+}
+
+.total-cartao--aceso .total-rotulo,
+.total-cartao--aceso .total-valor,
+.total-cartao--aceso .total-icone {
+  color: #fff;
+  opacity: 1;
+}
+
+.total-cartao--total.total-cartao--aceso {
+  background: var(--acento);
+}
+
+.total-cartao--operacao.total-cartao--aceso {
+  background: var(--verde);
+}
+
+.total-cartao--pausa.total-cartao--aceso {
+  background: var(--ambar);
+}
+
+.total-cartao--aceso::before {
+  background: rgba(255, 255, 255, 0.55);
+}
+
 .total-rotulo {
   font-size: 0.7rem;
   font-weight: 600;
@@ -933,10 +991,13 @@ textarea.op-campo {
   letter-spacing: 0.09em;
   color: var(--tinta-fraca);
   margin: 0 0 6px;
+  padding-right: 26px;
+  transition: color var(--normal);
 }
 
 .total-valor {
   font-family: var(--fonte-numero-pilha);
+  transition: color var(--normal);
   font-size: clamp(1.45rem, 2.6vw, 1.8rem);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -1360,20 +1421,9 @@ table.tabela tbody tr:last-child td {
 }
 
 @media (max-width: 640px) {
-  .navbar-marca {
-    display: none;
-  }
-
-  .navbar-saida-longo {
-    display: none;
-  }
-
-  .navbar-saida-curto {
-    display: inline;
-  }
-
   .navbar-interna {
-    gap: 8px;
+    justify-content: flex-start;
+    padding-left: var(--respiro);
   }
 
   .painel-topo {

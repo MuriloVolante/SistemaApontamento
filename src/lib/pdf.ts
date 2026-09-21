@@ -157,7 +157,7 @@ export function gerarPdfAnalitico(
       4: { cellWidth: 22 },
       5: { cellWidth: 24 },
       6: { cellWidth: 24 },
-      7: { cellWidth: 26 },
+      7: { cellWidth: 30 },
       8: { cellWidth: "auto" },
     },
     didParseCell: alinharColunas([0, 5, 6, 7]),

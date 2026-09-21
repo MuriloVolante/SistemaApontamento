@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import Modal from "@/components/Modal";
+import Icone from "@/components/Icone";
 import { finalizar, iniciar, obterEstado, parar, retomar } from "./actions";
 import { lerEtapaConfigurada } from "@/lib/maquina";
 import { diferencaEmSegundos, formatarDuracao } from "@/lib/tempo";
@@ -202,8 +204,13 @@ export default function TelaOperador() {
     <main className="operador">
       <header className="op-cabecalho">
         <div className="op-cabecalho-esq">
-          <Link href="/configurar" className="op-voltar" title="Trocar a etapa desta máquina">
-            ←
+          <Link
+            href="/configurar"
+            className="op-voltar"
+            title="Trocar a etapa desta máquina"
+            aria-label="Trocar a etapa desta máquina"
+          >
+            <Icone nome="setaEsquerda" tamanho={19} />
           </Link>
           <h1 className="op-etapa">{estado.etapa.nome}</h1>
         </div>
@@ -298,29 +305,29 @@ export default function TelaOperador() {
       </div>
 
       {confirmando && (
-        <div className="modal-fundo" role="dialog" aria-modal="true">
-          <div className="modal-caixa">
-            <h2 className="modal-titulo">Deseja realmente finalizar o apontamento desta etapa?</h2>
-            <div className="modal-acoes">
-              <button
-                type="button"
-                className="op-botao"
-                onClick={() => setConfirmando(false)}
-                disabled={ocupado}
-              >
-                Não
-              </button>
-              <button
-                type="button"
-                className="op-botao op-botao--iniciar"
-                onClick={aoFinalizar}
-                disabled={ocupado}
-              >
-                Sim
-              </button>
-            </div>
+        <Modal
+          titulo="Deseja realmente finalizar o apontamento desta etapa?"
+          aoFechar={() => setConfirmando(false)}
+        >
+          <div className="modal-acoes">
+            <button
+              type="button"
+              className="op-botao"
+              onClick={() => setConfirmando(false)}
+              disabled={ocupado}
+            >
+              Não
+            </button>
+            <button
+              type="button"
+              className="op-botao op-botao--iniciar"
+              onClick={aoFinalizar}
+              disabled={ocupado}
+            >
+              Sim
+            </button>
           </div>
-        </div>
+        </Modal>
       )}
     </main>
   );

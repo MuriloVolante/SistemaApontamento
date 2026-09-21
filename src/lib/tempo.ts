@@ -1,10 +1,16 @@
-/** Formata uma duração em segundos como HH:MM:SS (regra 6). */
+/**
+ * Formata uma duração em segundos como `00h 00m 00s`.
+ *
+ * Só a apresentação muda: todo o cálculo continua em segundos inteiros, e as
+ * horas de início e fim seguem no formato de relógio (`formatarHora`).
+ */
 export function formatarDuracao(segundosTotais: number): string {
   const s = Math.max(0, Math.floor(segundosTotais));
   const h = Math.floor(s / 3600);
   const m = Math.floor((s % 3600) / 60);
   const seg = s % 60;
-  return [h, m, seg].map((n) => String(n).padStart(2, "0")).join(":");
+  const doisDigitos = (n: number) => String(n).padStart(2, "0");
+  return `${doisDigitos(h)}h ${doisDigitos(m)}m ${doisDigitos(seg)}s`;
 }
 
 /** Diferença entre dois instantes, em segundos inteiros (regra 5). */

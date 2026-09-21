@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import Icone from "@/components/Icone";
 
 const PAGINAS = [
   { href: "/painel", rotulo: "Dashboard" },
   { href: "/painel/historico", rotulo: "Histórico" },
   { href: "/painel/etapas", rotulo: "Etapas" },
-  { href: "/painel/relatorios", rotulo: "Relatórios" },
 ];
 
 export default function LayoutPainel({ children }: { children: React.ReactNode }) {
@@ -17,8 +17,6 @@ export default function LayoutPainel({ children }: { children: React.ReactNode }
     <>
       <nav className="navbar">
         <div className="navbar-interna">
-          <span className="navbar-marca">Apontamento</span>
-
           <ul className="navbar-itens">
             {PAGINAS.map((p) => {
               // "/painel" só fica ativo na raiz; as demais, no seu prefixo.
@@ -33,10 +31,13 @@ export default function LayoutPainel({ children }: { children: React.ReactNode }
             })}
           </ul>
 
-          {/* Em telas estreitas o rótulo encurta para não roubar espaço das abas. */}
-          <Link href="/" className="navbar-saida">
-            <span className="navbar-saida-longo">Tela de apontamento</span>
-            <span className="navbar-saida-curto">Apontar</span>
+          <Link
+            href="/"
+            className="navbar-saida"
+            title="Tela de apontamento"
+            aria-label="Ir para a tela de apontamento"
+          >
+            <Icone nome="setaEsquerda" tamanho={19} />
           </Link>
         </div>
       </nav>

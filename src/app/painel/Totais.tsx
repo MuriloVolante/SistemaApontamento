@@ -1,24 +1,98 @@
 "use client";
 
+import Icone from "@/components/Icone";
+import type { NomeIcone } from "@/components/Icone";
 import { formatarDuracao } from "@/lib/tempo";
-import type { Totais } from "@/lib/tipos";
+import type { Tipo, Totais } from "@/lib/tipos";
 
-/** Os três cards de tempo, compartilhados entre Dashboard e Histórico. */
-export default function CardsTotais({ totais }: { totais: Totais }) {
+/** `null` no recorte significa "todos os tipos". */
+export type Recorte = Tipo | null;
+
+interface Props {
+  totais: Totais;
+  /** Quando informado, os cards viram filtro: clicar recorta a tabela. */
+  recorte?: Recorte;
+  aoRecortar?: (novo: Recorte) => void;
+}
+
+const CARDS: Array<{
+  chave: Recorte;
+  rotulo: string;
+  icone: NomeIcone;
+  classe: string;
+  valor: (t: Totais) => number;
+}> = [
+  {
+    chave: null,
+    rotulo: "Tempo Total",
+    icone: "relogio",
+    classe: "total-cartao--total",
+    valor: (t) => t.total,
+  },
+  {
+    chave: "OPERACAO",
+    rotulo: "Tempo em Operação",
+    icone: "operacao",
+    classe: "total-cartao--operacao",
+    valor: (t) => t.operacao,
+  },
+  {
+    chave: "PAUSA",
+    rotulo: "Tempo em Pausa",
+    icone: "pausa",
+    classe: "total-cartao--pausa",
+    valor: (t) => t.pausa,
+  },
+];
+
+/**
+ * Os três cards de tempo, compartilhados entre Dashboard e Histórico.
+ * No Histórico eles também são o filtro por tipo: clicar recorta a tabela,
+ * clicar de novo desfaz.
+ */
+export default function CardsTotais({ totais, recorte, aoRecortar }: Props) {
+  const clicavel = typeof aoRecortar === "function";
+
   return (
     <div className="totais">
-      <div className="total-cartao total-cartao--total">
-        <p className="total-rotulo">Tempo Total</p>
-        <p className="total-valor">{formatarDuracao(totais.total)}</p>
-      </div>
-      <div className="total-cartao total-cartao--operacao">
-        <p className="total-rotulo">Tempo em Operação</p>
-        <p className="total-valor">{formatarDuracao(totais.operacao)}</p>
-      </div>
-      <div className="total-cartao total-cartao--pausa">
-        <p className="total-rotulo">Tempo em Pausa</p>
-        <p className="total-valor">{formatarDuracao(totais.pausa)}</p>
-      </div>
+      {CARDS.map((c) => {
+        const ativo = clicavel && recorte === c.chave && c.chave !== null;
+        // "Tempo Total" acende quando nenhum recorte está aplicado.
+        const aceso = clicavel && (c.chave === null ? recorte === null : ativo);
+
+        const conteudo = (
+          <>
+            <span className="total-icone">
+              <Icone nome={c.icone} tamanho={17} />
+            </span>
+            <p className="total-rotulo">{c.rotulo}</p>
+            <p className="total-valor">{formatarDuracao(c.valor(totais))}</p>
+          </>
+        );
+
+        const classes = `total-cartao ${c.classe} ${aceso ? "total-cartao--aceso" : ""}`;
+
+        if (!clicavel) {
+          return (
+            <div key={c.rotulo} className={classes}>
+              {conteudo}
+            </div>
+          );
+        }
+
+        return (
+          <button
+            key={c.rotulo}
+            type="button"
+            className={`${classes} total-cartao--clicavel`}
+            aria-pressed={aceso}
+            // Clicar no card já marcado desliga o recorte.
+            onClick={() => aoRecortar?.(recorte === c.chave ? null : c.chave)}
+          >
+            {conteudo}
+          </button>
+        );
+      })}
     </div>
   );
 }
