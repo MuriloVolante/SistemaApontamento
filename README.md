@@ -23,6 +23,15 @@ em vez de serem montadas na primeira visita.
 Para mexer no código, use `desenvolver.bat`, que recarrega sozinho a cada
 alteração. É mais lento para navegar — é o preço do recarregamento automático.
 
+Os dois modos gravam em pastas separadas (`.next` para produção, `.next-dev`
+para desenvolvimento). Isso não é detalhe: quando dividiam a mesma pasta, rodar
+o modo de desenvolvimento sobrescrevia pedaços do build de produção e o
+`iniciar.bat` seguinte falhava com `Cannot find module './XXX.js'`.
+
+Se por qualquer motivo o sistema não subir, apague a pasta `.next` e rode o
+`iniciar.bat` de novo — ele recompila do zero. Nenhum dado se perde: o banco
+fica em `dados/`.
+
 Pelo terminal:
 
 ```bash
@@ -226,7 +235,7 @@ Os dados do SQLite local **não** são migrados automaticamente.
 ```
 iniciar.bat             duplo clique para subir o sistema (producao)
 desenvolver.bat         modo de desenvolvimento, para editar o codigo
-scripts/preparar.mjs    compila so quando algum arquivo mudou
+scripts/preparar.mjs    compila so quando o codigo mudou, e valida o build
 dados/apontamento.db    banco local (criado sozinho, fora do versionamento)
 src/
   app/
