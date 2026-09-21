@@ -28,6 +28,7 @@ create table if not exists etapas (
 
 create table if not exists apontamentos (
   id               text primary key,
+  numero           integer,
   etapa_id         text not null references etapas(id),
   numero_os        text not null,
   tipo             text not null check (tipo in ('OPERACAO','PAUSA')),
@@ -59,6 +60,7 @@ interface EtapaBruta {
 
 interface LinhaBruta {
   id: string;
+  numero: number;
   etapa_id: string;
   numero_os: string;
   tipo: Tipo;
@@ -93,7 +95,30 @@ export class RepositorioSqlite implements Repositorio {
     // Duas abas gravando ao mesmo tempo esperam a vez em vez de dar erro.
     this.db.pragma("busy_timeout = 5000");
     this.db.exec(ESQUEMA);
+    this.migrar();
+    // Depois da migração a coluna existe nos dois caminhos: tabela nova
+    // (veio no ESQUEMA) e tabela antiga (acabou de ser acrescentada).
+    this.db.exec("create index if not exists apontamentos_numero_idx on apontamentos (numero)");
     this.semear();
+  }
+
+  /**
+   * Bancos criados antes da coluna `numero` recebem a coluna e são numerados
+   * em ordem cronológica. Idempotente: em banco novo, não faz nada.
+   */
+  private migrar(): void {
+    const colunas = this.db.prepare("pragma table_info(apontamentos)").all() as { name: string }[];
+    if (colunas.some((c) => c.name === "numero")) return;
+
+    this.db.transaction(() => {
+      this.db.exec("alter table apontamentos add column numero integer");
+      this.db.exec(`
+        update apontamentos set numero = (
+          select count(*) from apontamentos anterior
+           where anterior.inicio < apontamentos.inicio
+              or (anterior.inicio = apontamentos.inicio and anterior.rowid <= apontamentos.rowid)
+        )`);
+    })();
   }
 
   /**
@@ -224,12 +249,14 @@ export class RepositorioSqlite implements Repositorio {
 
   // ---- apontamentos -----------------------------------------------------
 
-  async inserirApontamento(a: Omit<Apontamento, "id">): Promise<void> {
+  async inserirApontamento(a: Omit<Apontamento, "id" | "numero">): Promise<void> {
+    // O sequencial sai do próprio banco, dentro do mesmo comando: dois
+    // apontamentos gravados ao mesmo tempo não disputam o número.
     this.db
       .prepare(
         `insert into apontamentos
-           (id, etapa_id, numero_os, tipo, inicio, fim, duracao_segundos, justificativa)
-         values (?, ?, ?, ?, ?, ?, ?, ?)`
+           (id, numero, etapa_id, numero_os, tipo, inicio, fim, duracao_segundos, justificativa)
+         values (?, (select coalesce(max(numero), 0) + 1 from apontamentos), ?, ?, ?, ?, ?, ?, ?)`
       )
       .run(
         randomUUID(),

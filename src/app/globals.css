@@ -823,6 +823,7 @@ textarea.op-campo {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 7px;
   height: 38px;
   padding: 0 16px;
   font-size: 0.86rem;
@@ -1374,40 +1375,213 @@ table.tabela tbody tr:last-child td {
 }
 
 /* ---------------------------------------------------------------------
-   Relatórios
+   Histórico — filtros na lateral
    --------------------------------------------------------------------- */
 
-.relatorios-grade {
+.historico {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr));
+  grid-template-columns: 268px minmax(0, 1fr);
   gap: clamp(12px, 1.6vw, 18px);
+  align-items: start;
 }
 
-.relatorio-cartao {
+/* Acompanha a rolagem: a tabela é longa, os filtros continuam à mão. */
+.filtros-lateral {
+  position: sticky;
+  top: calc(52px + var(--respiro));
+}
+
+.filtros-caixa {
+  margin-bottom: 0;
+}
+
+.filtros-campos {
+  display: grid;
+  gap: 12px;
+}
+
+.filtros-dica {
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--tinta-fraca);
+  margin: 14px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--borda);
+}
+
+.filtros-acoes {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+/* Só aparece quando os filtros viram painel recolhível. */
+.filtros-alternar {
+  display: none;
+}
+
+.filtros-contador {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--acento);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------------------------------------------------------------------
+   Modal de relatório
+   --------------------------------------------------------------------- */
+
+.modal-herdado {
+  background: var(--superficie-2);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  padding: 11px 13px;
+}
+
+.modal-herdado-titulo {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--tinta-fraca);
+  margin-bottom: 9px;
+}
+
+.modal-fichas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ficha {
+  background: var(--superficie);
+  border: 1px solid var(--borda-media);
+  border-radius: 999px;
+  padding: 3px 11px;
+  font-size: 0.78rem;
+  color: var(--tinta-fraca);
+  overflow-wrap: anywhere;
+}
+
+.ficha strong {
+  color: var(--tinta);
+  font-weight: 600;
+}
+
+.modal-periodo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 16px 0 0;
+}
+
+.modal-relatorios {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.relatorio-opcao {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+  padding: 13px 14px;
+  text-align: left;
+  font: inherit;
+  background: var(--superficie);
+  border: 1px solid var(--borda-media);
+  border-radius: var(--raio);
+  cursor: pointer;
+  transition: background var(--rapido), border-color var(--rapido), box-shadow var(--rapido),
+    transform var(--rapido);
+}
+
+.relatorio-opcao:hover:not(:disabled) {
+  background: var(--acento-tenue);
+  border-color: var(--acento);
+  box-shadow: var(--sombra-p);
+  transform: translateY(-1px);
+}
+
+.relatorio-opcao:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.relatorio-opcao:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.relatorio-opcao-icone {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: var(--acento);
+}
+
+.relatorio-opcao-texto {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  margin-bottom: 0;
-  transition: box-shadow var(--normal), transform var(--normal);
-}
-
-.relatorio-cartao:hover {
-  box-shadow: var(--sombra-m);
-  transform: translateY(-2px);
-}
-
-.relatorio-texto {
-  font-size: 0.89rem;
+  gap: 3px;
+  font-size: 0.83rem;
+  line-height: 1.4;
   color: var(--tinta-fraca);
-  line-height: 1.5;
-  margin: 0 0 16px;
-  flex: 1 1 auto;
-  max-width: 48ch;
+}
+
+.relatorio-opcao-texto strong {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--tinta);
+}
+
+.modal-rodape {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
 }
 
 /* ---------------------------------------------------------------------
    Telas estreitas
    --------------------------------------------------------------------- */
+
+/* Abaixo disto a lateral de filtros vira painel recolhível no topo. */
+@media (max-width: 1080px) {
+  .historico {
+    grid-template-columns: 1fr;
+  }
+
+  .filtros-lateral {
+    position: static;
+    display: none;
+  }
+
+  .filtros-lateral--aberta {
+    display: block;
+    animation: surgir 200ms var(--saida-suave) both;
+  }
+
+  .filtros-alternar {
+    display: inline-flex;
+  }
+
+  .filtros-campos {
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  }
+
+  .filtros-acoes {
+    grid-auto-flow: column;
+    justify-content: start;
+  }
+}
 
 @media (max-width: 860px) {
   .op-colunas {
@@ -1430,8 +1604,10 @@ table.tabela tbody tr:last-child td {
     align-items: flex-start;
   }
 
-  .painel-topo .botao {
-    width: 100%;
+  .modal-periodo,
+  .filtros-acoes {
+    grid-template-columns: 1fr;
+    grid-auto-flow: row;
   }
 
   .paginacao {

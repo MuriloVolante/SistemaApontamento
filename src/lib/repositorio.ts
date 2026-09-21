@@ -43,7 +43,7 @@ export interface Repositorio {
   alterarSessao(etapaId: string, alteracao: AlteracaoSessao): Promise<void>;
   excluirSessao(etapaId: string): Promise<void>;
 
-  inserirApontamento(apontamento: Omit<Apontamento, "id">): Promise<void>;
+  inserirApontamento(apontamento: Omit<Apontamento, "id" | "numero">): Promise<void>;
   /** Total de apontamentos gravados. Como só há inserção, serve de número de
    *  revisão barato para detectar mudanças sem reler a tabela inteira. */
   contarApontamentos(): Promise<number>;

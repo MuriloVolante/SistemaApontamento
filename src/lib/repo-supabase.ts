@@ -17,6 +17,7 @@ import type {
  */
 interface RegistroBruto {
   id: string;
+  numero: number;
   etapa_id: string;
   numero_os: string;
   tipo: "OPERACAO" | "PAUSA";
@@ -154,7 +155,7 @@ export class RepositorioSupabase implements Repositorio {
 
   // ---- apontamentos -----------------------------------------------------
 
-  async inserirApontamento(a: Omit<Apontamento, "id">): Promise<void> {
+  async inserirApontamento(a: Omit<Apontamento, "id" | "numero">): Promise<void> {
     const { error } = await this.db.from("apontamentos").insert(a);
     if (error) throw new Error(error.message);
   }
@@ -171,7 +172,7 @@ export class RepositorioSupabase implements Repositorio {
     let q = this.db
       .from("apontamentos")
       .select(
-        "id, etapa_id, numero_os, tipo, inicio, fim, duracao_segundos, justificativa, etapas(nome)"
+        "id, numero, etapa_id, numero_os, tipo, inicio, fim, duracao_segundos, justificativa, etapas(nome)"
       )
       .order("inicio", { ascending: true });
 
@@ -186,6 +187,7 @@ export class RepositorioSupabase implements Repositorio {
 
     return ((data ?? []) as unknown as RegistroBruto[]).map((r) => ({
       id: r.id,
+      numero: r.numero,
       etapa_id: r.etapa_id,
       numero_os: r.numero_os,
       tipo: r.tipo,

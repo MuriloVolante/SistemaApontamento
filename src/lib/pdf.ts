@@ -128,8 +128,9 @@ export function gerarPdfAnalitico(
         "Justificativa",
       ],
     ],
-    body: linhas.map((l, i) => [
-      String(i + 1),
+    body: linhas.map((l) => [
+      // "#" e o sequencial do registro, o mesmo que aparece na tela.
+      String(l.numero),
       l.numero_os,
       l.etapa_nome,
       l.tipo === "OPERACAO" ? "Operação" : "Pausa",

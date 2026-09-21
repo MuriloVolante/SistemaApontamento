@@ -17,6 +17,11 @@ export interface Sessao {
 
 export interface Apontamento {
   id: string;
+  /**
+   * Contador sequencial por ordem de criação. É o "#" da tabela: fica preso
+   * ao registro, então não muda quando a consulta é filtrada ou reordenada.
+   */
+  numero: number;
   etapa_id: string;
   numero_os: string;
   tipo: Tipo;
