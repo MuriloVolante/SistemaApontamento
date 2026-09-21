@@ -73,6 +73,7 @@ recriada e semeada na próxima execução.
 | Banco (nuvem, opcional) | Supabase / Postgres |
 | Relatórios | jsPDF + jspdf-autotable |
 | Tempo real | Server-Sent Events (nativo, sem biblioteca) |
+| Tipografia | IBM Plex Sans e Mono, hospedadas no próprio projeto |
 
 Leituras e gravações passam por **server actions**, então todos os timestamps
 vêm do relógio do servidor — o cronômetro nunca depende do relógio do navegador
@@ -101,6 +102,34 @@ duas consultas sobre tabelas minúsculas (no máximo uma sessão por etapa, ou s
 
 Os cards de totais do dashboard só são reconsultados quando algum apontamento é
 gravado, detectado por um número de revisão que vem junto no pacote.
+
+---
+
+## Sistema visual
+
+Paleta neutra fria com **um único acento** em azul-petróleo. Cor forte é
+reservada para significado, nunca para decorar: verde é operação, âmbar é
+pausa, vinho é parada. Um cartão de OS ou o estado do operador se lê de longe
+pela faixa de cor antes mesmo de ler a palavra.
+
+**Tipografia.** IBM Plex Sans no texto e IBM Plex Mono em tudo que é número —
+cronômetros, durações, horários, contagens. O Mono mantém os dígitos com a
+mesma largura, então o cronômetro não "dança" a cada segundo. As fontes ficam
+em `src/fontes`, dentro do repositório: a aplicação roda no chão de fábrica e
+precisa funcionar sem internet, no navegador e na hora de compilar. São 76 kB
+no total, só o subconjunto latino.
+
+**Escala fluida.** Espaçamentos e tamanhos de texto usam `clamp()`, então a
+interface acompanha de um celular a um monitor grande sem quebras e sem
+pontos de virada bruscos. No celular a tela do operador vira uma coluna só e o
+cronômetro sobe para o topo, que é o que o operador confere primeiro; as abas
+do painel rolam na horizontal e a tabela rola dentro da própria moldura.
+
+**Movimento.** Curto e discreto — 110 ms a 300 ms, sempre com saída suave.
+Entrada de tela ao trocar de página, modal que cresce do centro, elevação leve
+no hover, afundamento no clique, e um cartão que surge quando uma OS nova
+começa (os que já estão na tela não piscam a cada atualização). Quem tiver
+"reduzir movimento" ligado no sistema recebe tudo estático.
 
 ---
 
@@ -254,6 +283,7 @@ src/
     globals.css         estilos (operador com alvos grandes de toque)
   components/
     GestaoEtapas.tsx    listar / adicionar / renomear / inativar
+  fontes/               IBM Plex Sans e Mono (.woff2), para rodar sem internet
   lib/
     repositorio.ts      interface da camada de dados + escolha do backend
     transmissor.ts      relógio único que difunde mudanças para as telas

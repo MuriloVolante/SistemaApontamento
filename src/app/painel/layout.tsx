@@ -33,13 +33,19 @@ export default function LayoutPainel({ children }: { children: React.ReactNode }
             })}
           </ul>
 
+          {/* Em telas estreitas o rótulo encurta para não roubar espaço das abas. */}
           <Link href="/" className="navbar-saida">
-            Tela de apontamento
+            <span className="navbar-saida-longo">Tela de apontamento</span>
+            <span className="navbar-saida-curto">Apontar</span>
           </Link>
         </div>
       </nav>
 
-      <main className="painel">{children}</main>
+      {/* A chave muda a cada rota: o React remonta o bloco e a animação de
+          entrada roda de novo. A navbar, fora daqui, fica parada. */}
+      <main className="painel" key={caminho}>
+        <div className="pagina">{children}</div>
+      </main>
     </>
   );
 }

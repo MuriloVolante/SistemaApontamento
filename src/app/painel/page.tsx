@@ -7,7 +7,6 @@ import CardsTotais from "./Totais";
 import {
   dataLocalISO,
   diferencaEmSegundos,
-  formatarData,
   formatarDuracao,
   formatarHora,
   limitesLocais,
@@ -133,11 +132,8 @@ export default function Dashboard() {
     <>
       <div className="painel-topo">
         <h1 className="painel-titulo">Dashboard</h1>
-        <span className="painel-legenda">
-          <span className={`sinal ${aoVivo ? "sinal--ligado" : "sinal--desligado"}`} />
-          {aoVivo ? "Ao vivo" : "Reconectando…"} · Totais de hoje ·{" "}
-          {formatarData(`${hoje}T12:00:00`)}
-        </span>
+        {/* Estado da conexão só aparece quando há o que avisar. */}
+        {!aoVivo && <span className="reconectando">Reconectando…</span>}
       </div>
 
       {erro && <p className="erro">{erro}</p>}

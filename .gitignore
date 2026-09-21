@@ -1,12 +1,16 @@
 node_modules
+
+# Build de producao e build do modo de desenvolvimento, em pastas separadas
 .next
 .next-dev
 out
-.env
-.env.local
 *.tsbuildinfo
 next-env.d.ts
 .vercel
 
-# Banco local (SQLite) — cada máquina tem o seu
+# Credenciais
+.env
+.env.local
+
+# Banco local (SQLite): cada maquina tem o seu
 dados/
