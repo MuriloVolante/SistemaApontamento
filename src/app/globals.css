@@ -211,80 +211,42 @@ textarea {
 
 /* ---- troca de tela ----------------------------------------------------
 
-   Duas camadas convivem durante a troca: a que sai escorrega para um lado,
-   a que entra chega do outro. O leve recuo de escala dá profundidade, como
-   quem empurra uma área de trabalho para o lado. A duração aqui precisa
-   bater com a constante DURACAO do componente Transicao. */
+   Só a tela que entra desliza. Sem camada de saída: duas telas sobrepostas
+   a poucos pixels viram texto fantasma, não deslize. Sem posicionamento
+   absoluto e sem recorte, a altura da página se comporta normalmente. */
 
-.transicao {
-  position: relative;
-  /* `clip` recorta sem virar caixa de rolagem: a barra lateral de filtros
-     continua grudando na tela. `hidden` quebraria isso. */
-  overflow-x: clip;
-  overflow-y: visible;
-}
-
-.transicao-camada--saindo {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
+/* Dois cuidados de robustez, porque isto roda em terminal de fabrica:
+   sem `fill`, e o primeiro quadro nunca zera a opacidade. Se a animacao
+   travar por qualquer motivo, o pior caso e a tela aparecer deslocada e um
+   pouco clara - nunca em branco. Num slide de 300 ms, comecar em 0.45 e
+   visualmente indistinguivel de comecar em 0. */
+.transicao--avancando {
+  animation: entrar-da-direita 300ms var(--deslize);
 }
 
-.transicao--avancando .transicao-camada--entrando {
-  animation: entrar-da-direita 380ms var(--deslize) both;
-}
-.transicao--avancando .transicao-camada--saindo {
-  animation: sair-para-esquerda 380ms var(--deslize) both;
-}
-
-.transicao--voltando .transicao-camada--entrando {
-  animation: entrar-da-esquerda 380ms var(--deslize) both;
-}
-.transicao--voltando .transicao-camada--saindo {
-  animation: sair-para-direita 380ms var(--deslize) both;
+.transicao--voltando {
+  animation: entrar-da-esquerda 300ms var(--deslize);
 }
 
 @keyframes entrar-da-direita {
   from {
-    opacity: 0;
-    transform: translateX(64px) scale(0.982);
+    opacity: 0.45;
+    transform: translate3d(38px, 0, 0);
   }
   to {
     opacity: 1;
     transform: none;
-  }
-}
-
-@keyframes sair-para-esquerda {
-  from {
-    opacity: 1;
-    transform: none;
-  }
-  to {
-    opacity: 0;
-    transform: translateX(-64px) scale(0.982);
   }
 }
 
 @keyframes entrar-da-esquerda {
   from {
-    opacity: 0;
-    transform: translateX(-64px) scale(0.982);
+    opacity: 0.45;
+    transform: translate3d(-38px, 0, 0);
   }
   to {
     opacity: 1;
     transform: none;
-  }
-}
-
-@keyframes sair-para-direita {
-  from {
-    opacity: 1;
-    transform: none;
-  }
-  to {
-    opacity: 0;
-    transform: translateX(64px) scale(0.982);
   }
 }
 
