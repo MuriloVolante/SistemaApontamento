@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Modal from "@/components/Modal";
 import Icone from "@/components/Icone";
-import { finalizar, iniciar, obterEstado, parar, retomar } from "./actions";
+import { finalizar, iniciar, obterEstado, parar, retomar } from "../actions";
 import { lerEtapaConfigurada } from "@/lib/maquina";
 import { diferencaEmSegundos, formatarDuracao } from "@/lib/tempo";
 import type { EstadoEtapa } from "@/lib/tipos";

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { listarEtapas } from "../actions";
+import { listarEtapas } from "../../actions";
 import { gravarEtapaConfigurada, lerEtapaConfigurada } from "@/lib/maquina";
 import type { Etapa } from "@/lib/tipos";
 

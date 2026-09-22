@@ -66,6 +66,8 @@
   --rapido: 110ms cubic-bezier(0.2, 0, 0.2, 1);
   --normal: 180ms cubic-bezier(0.2, 0, 0.2, 1);
   --saida-suave: cubic-bezier(0.16, 1, 0.3, 1);
+  /* Deslize de tela: sai decidido, chega freando, com percurso visível. */
+  --deslize: cubic-bezier(0.34, 0.75, 0.2, 1);
 
   /* ---- ritmo ---- */
   --respiro: clamp(12px, 2.2vw, 22px);
@@ -207,9 +209,83 @@ textarea {
   }
 }
 
-/* Troca de tela do painel: o conteúdo entra, a navbar fica parada. */
-.pagina {
-  animation: surgir 240ms var(--saida-suave) both;
+/* ---- troca de tela ----------------------------------------------------
+
+   Duas camadas convivem durante a troca: a que sai escorrega para um lado,
+   a que entra chega do outro. O leve recuo de escala dá profundidade, como
+   quem empurra uma área de trabalho para o lado. A duração aqui precisa
+   bater com a constante DURACAO do componente Transicao. */
+
+.transicao {
+  position: relative;
+  /* `clip` recorta sem virar caixa de rolagem: a barra lateral de filtros
+     continua grudando na tela. `hidden` quebraria isso. */
+  overflow-x: clip;
+  overflow-y: visible;
+}
+
+.transicao-camada--saindo {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.transicao--avancando .transicao-camada--entrando {
+  animation: entrar-da-direita 380ms var(--deslize) both;
+}
+.transicao--avancando .transicao-camada--saindo {
+  animation: sair-para-esquerda 380ms var(--deslize) both;
+}
+
+.transicao--voltando .transicao-camada--entrando {
+  animation: entrar-da-esquerda 380ms var(--deslize) both;
+}
+.transicao--voltando .transicao-camada--saindo {
+  animation: sair-para-direita 380ms var(--deslize) both;
+}
+
+@keyframes entrar-da-direita {
+  from {
+    opacity: 0;
+    transform: translateX(64px) scale(0.982);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes sair-para-esquerda {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-64px) scale(0.982);
+  }
+}
+
+@keyframes entrar-da-esquerda {
+  from {
+    opacity: 0;
+    transform: translateX(-64px) scale(0.982);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes sair-para-direita {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translateX(64px) scale(0.982);
+  }
 }
 
 /* ---------------------------------------------------------------------
@@ -220,7 +296,6 @@ textarea {
   max-width: 1120px;
   margin: 0 auto;
   padding: var(--respiro) var(--respiro) calc(var(--respiro) + 8px);
-  animation: surgir 260ms var(--saida-suave) both;
 }
 
 .op-cabecalho {
@@ -623,6 +698,7 @@ textarea.op-campo {
 }
 
 .navbar-itens {
+  position: relative;
   display: flex;
   list-style: none;
   margin: 0;
@@ -631,6 +707,25 @@ textarea.op-campo {
   max-width: 100%;
   overflow-x: auto;
   scrollbar-width: none;
+}
+
+/* Um sublinhado só para todas as abas: em vez de sumir de uma e aparecer na
+   outra, ele escorrega e se estica até a nova posição. */
+.navbar-marca {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  background: #fff;
+  border-radius: 2px;
+  opacity: 0;
+  will-change: transform, width;
+}
+
+.navbar-marca--pronta {
+  opacity: 1;
+  transition: transform 380ms var(--deslize), width 380ms var(--deslize),
+    opacity var(--rapido);
 }
 
 .navbar-itens::-webkit-scrollbar {
@@ -651,35 +746,13 @@ textarea.op-campo {
   transition: color var(--rapido), background var(--rapido);
 }
 
-/* Sublinhado que cresce do centro: some no repouso, aparece no hover e
-   fica cheio na página atual. */
-.navbar-link::after {
-  content: "";
-  position: absolute;
-  left: 12px;
-  right: 12px;
-  bottom: 0;
-  height: 2px;
-  background: currentColor;
-  transform: scaleX(0);
-  transition: transform var(--normal);
-}
-
 .navbar-link:hover {
   color: #fff;
   background: rgba(255, 255, 255, 0.05);
 }
 
-.navbar-link:hover::after {
-  transform: scaleX(0.55);
-}
-
 .navbar-link--ativo {
   color: #fff;
-}
-
-.navbar-link--ativo::after {
-  transform: scaleX(1);
 }
 
 /* Só a seta: volta para a tela de apontamento. */

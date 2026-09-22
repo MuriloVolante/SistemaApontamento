@@ -84,7 +84,7 @@ export default function BuscaOs({ sessoesAoVivo, agoraCorrigido, revisao, aoMuda
         <input
           className="busca-campo"
           type="search"
-          placeholder="Buscar OS — onde está o material?"
+          placeholder="Buscar OS"
           aria-label="Buscar OS"
           value={texto}
           onChange={(e) => setTexto(e.target.value)}
