@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { listarSessoesAtivas } from "../actions";
 import { consultarApontamentos } from "../consultas";
 import CardsTotais from "./Totais";
+import BuscaOs from "./BuscaOs";
 import {
   dataLocalISO,
   diferencaEmSegundos,
@@ -32,6 +33,8 @@ export default function Dashboard() {
 
   // Última revisão de apontamentos já refletida nos cards.
   const revisaoCarregada = useRef<number | null>(null);
+  const [revisao, setRevisao] = useState<number | null>(null);
+  const [buscaAtiva, setBuscaAtiva] = useState(false);
 
   const hoje = dataLocalISO(new Date().toISOString());
 
@@ -54,6 +57,7 @@ export default function Dashboard() {
       // Os cards só são reconsultados quando algum apontamento foi gravado.
       if (revisaoCarregada.current !== dados.revisaoApontamentos) {
         revisaoCarregada.current = dados.revisaoApontamentos;
+        setRevisao(dados.revisaoApontamentos);
         carregarTotais().catch((e: Error) => setErro(e.message));
       }
     },
@@ -136,9 +140,19 @@ export default function Dashboard() {
         {!aoVivo && <span className="reconectando">Reconectando…</span>}
       </div>
 
+      <BuscaOs
+        sessoesAoVivo={sessoes}
+        agoraCorrigido={agoraCorrigido}
+        revisao={revisao}
+        aoMudarBusca={setBuscaAtiva}
+      />
+
       {erro && <p className="erro">{erro}</p>}
 
-      <CardsTotais totais={totais} />
+      {/* Durante a busca o painel do dia sai de cena para não competir. */}
+      {!buscaAtiva && (
+        <>
+          <CardsTotais totais={totais} />
 
       <section className="cartao">
         <div className="cartao-cabecalho">
@@ -180,7 +194,9 @@ export default function Dashboard() {
             );
           })}
         </div>
-      </section>
+          </section>
+        </>
+      )}
     </>
   );
 }

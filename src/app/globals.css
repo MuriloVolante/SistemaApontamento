@@ -1375,6 +1375,187 @@ table.tabela tbody tr:last-child td {
 }
 
 /* ---------------------------------------------------------------------
+   Dashboard — busca de OS
+   --------------------------------------------------------------------- */
+
+.busca {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--superficie);
+  border: 1px solid var(--borda-media);
+  border-radius: var(--raio-g);
+  box-shadow: var(--sombra-p);
+  padding: 8px 8px 8px 14px;
+  margin-bottom: clamp(12px, 1.6vw, 18px);
+  transition: border-color var(--rapido), box-shadow var(--rapido);
+}
+
+.busca:focus-within {
+  border-color: var(--acento);
+  box-shadow: var(--anel);
+}
+
+.busca-lupa {
+  display: inline-flex;
+  color: var(--tinta-fraca);
+  flex: 0 0 auto;
+}
+
+.busca:focus-within .busca-lupa {
+  color: var(--acento);
+}
+
+.busca-campo {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 38px;
+  border: none;
+  background: transparent;
+  font-size: 1rem;
+  outline: none;
+}
+
+.busca-campo::placeholder {
+  color: var(--tinta-fraca);
+}
+
+/* O "x" nativo do type=search some: o botão abaixo faz esse papel. */
+.busca-campo::-webkit-search-cancel-button {
+  display: none;
+}
+
+.busca-limpar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  color: var(--tinta-fraca);
+  background: transparent;
+  border: none;
+  border-radius: var(--raio);
+  cursor: pointer;
+  transition: background var(--rapido), color var(--rapido);
+}
+
+.busca-limpar:hover {
+  background: var(--superficie-3);
+  color: var(--tinta);
+}
+
+.busca-resultado {
+  animation: surgir 240ms var(--saida-suave) both;
+}
+
+/* Cartão grande: onde a OS está agora. */
+.situacao-os {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: clamp(12px, 2vw, 18px);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-g);
+  box-shadow: var(--sombra-p);
+  padding: clamp(14px, 2vw, 20px);
+  margin-bottom: clamp(12px, 1.6vw, 18px);
+  overflow: hidden;
+}
+
+.situacao-os::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+}
+
+.situacao-os--andamento {
+  background: var(--verde-tenue);
+  border-color: var(--verde-borda);
+}
+.situacao-os--andamento::before {
+  background: var(--verde);
+}
+.situacao-os--andamento .situacao-os-icone,
+.situacao-os--andamento .situacao-os-cronometro {
+  color: var(--verde-escuro);
+}
+
+.situacao-os--pausado {
+  background: var(--ambar-tenue);
+  border-color: var(--ambar-borda);
+}
+.situacao-os--pausado::before {
+  background: var(--ambar);
+}
+.situacao-os--pausado .situacao-os-icone,
+.situacao-os--pausado .situacao-os-cronometro {
+  color: var(--ambar-escuro);
+}
+
+.situacao-os--parado {
+  background: var(--superficie);
+}
+.situacao-os--parado::before {
+  background: var(--borda-forte);
+}
+.situacao-os--parado .situacao-os-icone {
+  color: var(--tinta-fraca);
+}
+
+.situacao-os-icone {
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+
+.situacao-os-texto {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.situacao-os-rotulo {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--tinta-fraca);
+  overflow-wrap: anywhere;
+}
+
+.situacao-os-etapa {
+  font-size: clamp(1.15rem, 2.4vw, 1.5rem);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  overflow-wrap: anywhere;
+}
+
+.situacao-os-detalhe {
+  font-size: 0.86rem;
+  color: var(--tinta-fraca);
+  overflow-wrap: anywhere;
+}
+
+.situacao-os-cronometro {
+  font-family: var(--fonte-numero-pilha);
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  flex: 0 0 auto;
+}
+
+/* Cabeçalho de tabela sem ordenação: só o rótulo, com o mesmo respiro. */
+.cabecalho-simples {
+  display: block;
+  padding: 9px 11px;
+}
+
+/* ---------------------------------------------------------------------
    Histórico — filtros na lateral
    --------------------------------------------------------------------- */
 
@@ -1595,6 +1776,19 @@ table.tabela tbody tr:last-child td {
 }
 
 @media (max-width: 640px) {
+  .situacao-os {
+    flex-wrap: wrap;
+  }
+
+  .busca {
+    flex-wrap: wrap;
+    padding: 10px;
+  }
+
+  .busca-campo {
+    flex: 1 1 140px;
+  }
+
   .navbar-interna {
     justify-content: flex-start;
     padding-left: var(--respiro);

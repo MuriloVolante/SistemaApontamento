@@ -177,6 +177,7 @@ export class RepositorioSupabase implements Repositorio {
       .order("inicio", { ascending: true });
 
     if (f.os?.trim()) q = q.ilike("numero_os", `%${f.os.trim()}%`);
+    if (f.osExata?.trim()) q = q.eq("numero_os", f.osExata.trim());
     if (f.etapaId) q = q.eq("etapa_id", f.etapaId);
     if (f.tipo) q = q.eq("tipo", f.tipo);
     if (f.deISO) q = q.gte("inicio", f.deISO);

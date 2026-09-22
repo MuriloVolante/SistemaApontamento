@@ -4,6 +4,7 @@ import { repositorio } from "@/lib/repositorio";
 import type {
   FiltroConsulta,
   LinhaSintetico,
+  ResultadoBuscaOs,
   ResultadoConsulta,
   Totais,
 } from "@/lib/tipos";
@@ -42,4 +43,21 @@ export async function relatorioSintetico(f: FiltroConsulta): Promise<LinhaSintet
   return [...porEtapa.values()].sort((a, b) =>
     a.etapa_nome.localeCompare(b.etapa_nome, "pt-BR")
   );
+}
+
+/**
+ * Busca uma OS pelo número exato: onde ela está agora e todo o histórico
+ * dela. Serve para responder ao cliente que liga perguntando do material.
+ */
+export async function buscarOs(numeroOs: string): Promise<ResultadoBuscaOs> {
+  const os = numeroOs.trim();
+  if (!os) return { os: "", sessao: null, linhas: [], totais: { total: 0, operacao: 0, pausa: 0 } };
+
+  const repo = await repositorio();
+  const [sessoes, { linhas, totais }] = await Promise.all([
+    repo.listarSessoesAtivas(),
+    consultarApontamentos({ osExata: os }),
+  ]);
+
+  return { os, sessao: sessoes.find((s) => s.numero_os === os) ?? null, linhas, totais };
 }

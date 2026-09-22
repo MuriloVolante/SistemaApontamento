@@ -286,6 +286,10 @@ export class RepositorioSqlite implements Repositorio {
       condicoes.push("a.numero_os like '%' || ? || '%'");
       valores.push(f.os.trim());
     }
+    if (f.osExata?.trim()) {
+      condicoes.push("a.numero_os = ?");
+      valores.push(f.osExata.trim());
+    }
     if (f.etapaId) {
       condicoes.push("a.etapa_id = ?");
       valores.push(f.etapaId);

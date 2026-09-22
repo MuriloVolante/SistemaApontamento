@@ -73,7 +73,10 @@ export type Resultado<T = null> =
  * e não o do servidor.
  */
 export interface FiltroConsulta {
+  /** Busca parcial, usada pelos filtros do histórico. */
   os?: string;
+  /** Igualdade exata, usada pela busca de OS do dashboard. */
+  osExata?: string;
   etapaId?: string;
   tipo?: "" | Tipo;
   deISO?: string;
@@ -103,4 +106,13 @@ export interface AtualizacaoAoVivo {
   agora: string;
   /** Muda a cada apontamento gravado; sinaliza que os totais saíram do lugar. */
   revisaoApontamentos: number;
+}
+
+/** Onde uma OS está agora e tudo o que já passou por ela. */
+export interface ResultadoBuscaOs {
+  os: string;
+  /** Sessão em curso com essa OS, se houver. */
+  sessao: SessaoAtiva | null;
+  linhas: LinhaApontamento[];
+  totais: Totais;
 }
