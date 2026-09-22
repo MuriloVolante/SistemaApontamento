@@ -112,12 +112,18 @@ reservada para significado, nunca para decorar: verde é operação, âmbar é
 pausa, vinho é parada. Um cartão de OS ou o estado do operador se lê de longe
 pela faixa de cor antes mesmo de ler a palavra.
 
-**Tipografia.** IBM Plex Sans no texto e IBM Plex Mono em tudo que é número —
-cronômetros, durações, horários, contagens. O Mono mantém os dígitos com a
-mesma largura, então o cronômetro não "dança" a cada segundo. As fontes ficam
-em `src/fontes`, dentro do repositório: a aplicação roda no chão de fábrica e
-precisa funcionar sem internet, no navegador e na hora de compilar. São 76 kB
-no total, só o subconjunto latino.
+**Tipografia.** IBM Plex Sans, com **algarismos tabulares** em tudo que é
+número. Os dígitos ficam com a mesma largura, então o cronômetro não "dança" a
+cada segundo, e o zero é limpo, sem ponto no meio. A fonte fica em
+`src/fontes`, dentro do repositório: a aplicação roda no chão de fábrica e
+precisa funcionar sem internet, no navegador e na hora de compilar. São 45 kB,
+só o subconjunto latino.
+
+**Durações** aparecem como `00h 00m 00s`; horas de início e fim seguem no
+formato de relógio.
+
+**Ícones** no traço do Iconoir (MIT), embutidos como SVG num componente local:
+sem dependência, sem CDN e sem peso perceptível no pacote.
 
 **Escala fluida.** Espaçamentos e tamanhos de texto usam `clamp()`, então a
 interface acompanha de um celular a um monitor grande sem quebras e sem
@@ -176,41 +182,56 @@ Quatro telas, em uma barra de navegação no topo.
 
 ### Dashboard
 
-O que está acontecendo agora, sem nenhum filtro para preencher:
+Uma **busca de OS** no topo, para quando o cliente liga perguntando do
+material: digita-se o número exato e a tela mostra em que etapa a OS está, se
+está em andamento ou pausada e há quanto tempo — ou avisa que ela não está em
+operação, indicando a última etapa por onde passou. Abaixo, os totais e todo o
+histórico daquela OS. O cartão de situação é alimentado pelo fluxo ao vivo,
+então o cronômetro dele corre sozinho.
+
+Sem busca ativa, o dashboard mostra o que está acontecendo agora:
 
 - os três cards — Tempo Total, Tempo em Operação e Tempo em Pausa — com os
   totais **do dia de hoje**;
-- um card por **OS em andamento**, com o número da OS, a etapa, o cronômetro do
-  estado atual e, quando pausada, o motivo da parada.
+- um card por **OS em andamento**, com o número da OS, a etapa, o cronômetro
+  do estado atual e, quando pausada, o motivo da parada.
 
 O dashboard é **ao vivo**: não precisa atualizar a página. O servidor mantém um
-fluxo aberto (SSE, em `/api/ativos`) e empurra cada mudança em até um segundo —
-uma OS que começa, uma parada, uma retomada, um apontamento finalizado. O ponto
-verde ao lado do título indica que o canal está aberto; se cair, ele reconecta
-sozinho e, enquanto isso, a tela volta a consultar a cada 15 segundos para não
-ficar parada.
+fluxo aberto (SSE, em `/api/ativos`) e empurra cada mudança em até um segundo.
+Se o canal cair, o EventSource reconecta sozinho e, enquanto isso, a tela volta
+a consultar a cada 15 segundos, avisando de forma discreta enquanto dura.
 
 Os cronômetros são recalculados por diferença de timestamps contra o relógio do
 servidor, igual à tela do operador.
 
 ### Histórico
 
-A tabela completa de apontamentos, com filtros de OS (busca parcial), Etapa,
-Tipo e Data, os três cards recalculados a cada mudança de filtro, e paginação de
-50 registros.
+A tabela completa de apontamentos. Os filtros ficam numa **lateral fixa** que
+acompanha a rolagem — OS (busca parcial), Etapa e Data. Abaixo de 1080 px ela
+vira um painel recolhível no topo, com a contagem de filtros ativos.
 
-**Toda coluna ordena.** Clique no cabeçalho para ordenar por ele em ordem
-crescente, clique de novo para inverter. A seta mostra o sentido em que os
-valores crescem ao descer a lista: **↓ crescente**, **↑ decrescente**. A tabela
-abre ordenada por `#` crescente, que é a ordem cronológica. Cada coluna ordena
-pelo que a célula mostra — `Data` pela data, `Hora Início` e `Hora Fim` pela
-hora do dia, `Tempo Total` pela duração — e empates mantêm a ordem cronológica.
+A coluna **`#` é o identificador do registro**: um sequencial por ordem de
+criação, gravado no banco. Ele fica preso à linha, então filtrando por Pausa a
+tabela mostra `#2`, `#4`, `#6` — e não `1`, `2`, `3`.
 
-O botão **Exportar esta consulta** gera o relatório analítico exatamente com o
-que está filtrado, na mesma ordem que está na tela.
+**Toda coluna ordena.** Clique no cabeçalho para ordenar em ordem crescente,
+clique de novo para inverter. A seta mostra o sentido em que os valores crescem
+ao descer a lista: **↓ crescente**, **↑ decrescente**. Cada coluna ordena pelo
+que a célula mostra, e empates mantêm a ordem de criação. A paginação é de 50
+registros.
 
-A data é interpretada no fuso do navegador, então "hoje" é o dia local de quem
-consulta.
+**Os três cards são o filtro por tipo.** Clicar em "Tempo em Operação" recorta
+a tabela para Operação e acende o card; clicar de novo desfaz. Por isso não
+existe um campo "Tipo" nos filtros — seria a mesma coisa duas vezes. Os totais
+continuam calculados sobre a consulta inteira, senão o card clicado zeraria os
+outros dois.
+
+**Gerar relatório** abre um modal já preenchido com OS, Etapa e Tipo da tela;
+ali se informa Data Início e Data Fim e escolhe-se entre:
+
+- **Analítico:** um apontamento por linha, com os três totais no cabeçalho.
+- **Sintético:** uma linha por etapa com tempo total, em operação e pausado,
+  fechando com o total consolidado.
 
 ### Etapas
 
@@ -235,10 +256,9 @@ os dois relatórios:
 |---|---|
 | `/` | Tela do operador, já na etapa configurada nesta máquina. |
 | `/configurar` | Escolha da etapa da máquina. Usada uma vez por terminal. |
-| `/painel` | Dashboard: totais do dia e OSs em andamento. |
-| `/painel/historico` | Tabela completa, com filtros e paginação. |
+| `/painel` | Dashboard: busca de OS, totais do dia e OSs em andamento. |
+| `/painel/historico` | Tabela completa, com filtros, ordenação e relatórios. |
 | `/painel/etapas` | Cadastro de etapas. |
-| `/painel/relatorios` | Geração dos dois relatórios em PDF. |
 
 ---
 
@@ -277,12 +297,14 @@ src/
       layout.tsx        barra de navegação do painel
       page.tsx          Dashboard
       Totais.tsx        os três cards, usados por Dashboard e Histórico
-      historico/        tabela com filtros e paginação
+      BuscaOs.tsx       busca de OS do dashboard
+      historico/        tabela, filtros laterais e modal de relatório
       etapas/           cadastro de etapas
-      relatorios/       parâmetros e geração dos PDFs
     globals.css         estilos (operador com alvos grandes de toque)
   components/
     GestaoEtapas.tsx    listar / adicionar / renomear / inativar
+    Modal.tsx           modal renderizado por portal no body
+    Icone.tsx           icones no traco do Iconoir, embutidos
   fontes/               IBM Plex Sans e Mono (.woff2), para rodar sem internet
   lib/
     repositorio.ts      interface da camada de dados + escolha do backend
