@@ -5,6 +5,7 @@ import { listarSessoesAtivas } from "../actions";
 import { consultarApontamentos } from "../consultas";
 import CardsTotais from "./Totais";
 import BuscaOs from "./BuscaOs";
+import Icone from "@/components/Icone";
 import {
   dataLocalISO,
   diferencaEmSegundos,
@@ -179,7 +180,12 @@ export default function Dashboard() {
               >
                 <header className="os-cartao-topo">
                   <span className="os-numero">{s.numero_os}</span>
-                  <span className={`etiqueta ${pausada ? "etiqueta--pausa" : "etiqueta--operacao"}`}>
+                  <span
+                    className={`etiqueta etiqueta--com-icone ${
+                      pausada ? "etiqueta--pausa" : "etiqueta--operacao"
+                    }`}
+                  >
+                    <Icone nome={pausada ? "pausa" : "operacao"} tamanho={11} />
                     {pausada ? "Pausado" : "Em andamento"}
                   </span>
                 </header>

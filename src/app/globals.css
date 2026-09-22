@@ -1124,6 +1124,12 @@ table.tabela tbody tr:last-child td {
   white-space: nowrap;
 }
 
+.etiqueta--com-icone {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
 .etiqueta--operacao {
   background: var(--verde-tenue);
   border-color: var(--verde-borda);
