@@ -1658,6 +1658,345 @@ table.tabela tbody tr:last-child td {
 }
 
 /* ---------------------------------------------------------------------
+   Histórico no celular — chips, KPIs e um card por OS
+   --------------------------------------------------------------------- */
+
+.chips {
+  display: flex;
+  gap: 7px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+  margin-bottom: 12px;
+}
+
+.chips::-webkit-scrollbar {
+  display: none;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  height: 34px;
+  padding: 0 13px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--tinta-media);
+  background: var(--superficie);
+  border: 1px solid var(--borda-media);
+  border-radius: 999px;
+  box-shadow: var(--sombra-xs);
+  cursor: pointer;
+  white-space: nowrap;
+  max-width: 62vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background var(--rapido), border-color var(--rapido), color var(--rapido);
+}
+
+.chip:active {
+  transform: scale(0.97);
+}
+
+.chip--ativo {
+  color: var(--acento);
+  border-color: var(--acento);
+  background: var(--acento-tenue);
+  font-weight: 600;
+}
+
+.chip--limpar {
+  color: var(--tinta-fraca);
+}
+
+/* Os três números numa linha só. */
+.kpis {
+  display: flex;
+  align-items: stretch;
+  gap: 1px;
+  background: var(--borda);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.kpi {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 9px 10px;
+  background: var(--superficie);
+  font-family: var(--fonte-numero-pilha);
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.kpi em {
+  font-family: var(--fonte-texto-pilha);
+  font-size: 0.65rem;
+  font-style: normal;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--tinta-fraca);
+}
+
+.kpi--operacao {
+  color: var(--verde-escuro);
+}
+
+.kpi--pausa {
+  color: var(--ambar-escuro);
+}
+
+.kpi b {
+  font-size: 0.75rem;
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+/* Critério de ordenação dos blocos. */
+.ordenar-grupos {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.ordenar-grupo {
+  flex: 1 1 0;
+  height: 32px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--tinta-fraca);
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  cursor: pointer;
+  transition: background var(--rapido), color var(--rapido), border-color var(--rapido);
+}
+
+.ordenar-grupo--ativo {
+  color: var(--acento);
+  border-color: var(--acento);
+  background: var(--acento-tenue);
+  font-weight: 600;
+}
+
+/* ---- um card por OS / etapa / dia ---- */
+
+.lista-grupos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.grupo {
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-g);
+  box-shadow: var(--sombra-p);
+  padding: 12px 13px 13px;
+  animation: surgir 220ms var(--saida-suave) both;
+}
+
+.grupo-topo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.grupo-identificacao {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.grupo-os {
+  font-size: 0.98rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.grupo-meta {
+  font-size: 0.76rem;
+  color: var(--tinta-fraca);
+  overflow-wrap: anywhere;
+}
+
+/* O ano quase nunca importa na leitura do dia a dia. */
+.grupo-ano {
+  opacity: 0.55;
+}
+
+.grupo-tempo {
+  font-family: var(--fonte-numero-pilha);
+  font-size: 1.02rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  flex: 0 0 auto;
+}
+
+.grupo-seta {
+  flex: 0 0 auto;
+  color: var(--tinta-fraca);
+  font-size: 0.9rem;
+  line-height: 1;
+  transition: transform var(--normal);
+}
+
+.grupo-seta--aberta {
+  transform: rotate(90deg);
+}
+
+/* Substitui as colunas Tipo, Início, Fim e Tempo: a proporção se lê de relance. */
+.grupo-barra {
+  height: 7px;
+  margin: 10px 0 7px;
+  border-radius: 999px;
+  background: var(--ambar);
+  overflow: hidden;
+}
+
+.grupo-barra-op {
+  display: block;
+  height: 100%;
+  background: var(--verde);
+  border-radius: 999px;
+  transition: width var(--normal);
+}
+
+.grupo-legenda {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--tinta-fraca);
+}
+
+.grupo-percentual {
+  font-family: var(--fonte-numero-pilha);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--verde-escuro);
+  flex: 0 0 auto;
+}
+
+.grupo-motivos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  min-width: 0;
+}
+
+.grupo-motivo {
+  overflow-wrap: anywhere;
+}
+
+.grupo-motivo::before {
+  content: "\00b7 ";
+  opacity: 0.6;
+}
+
+/* ---- timeline: os horários evento a evento, um toque abaixo ---- */
+
+.linha-do-tempo {
+  list-style: none;
+  margin: 11px 0 0;
+  padding: 11px 0 0;
+  border-top: 1px dashed var(--borda-media);
+  display: grid;
+  gap: 7px;
+  animation: surgir 200ms var(--saida-suave) both;
+}
+
+.evento {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 9px;
+  font-size: 0.78rem;
+  color: var(--tinta-media);
+}
+
+.evento-icone {
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+
+.evento--operacao .evento-icone {
+  color: var(--verde);
+}
+
+.evento--pausa .evento-icone {
+  color: var(--ambar);
+}
+
+.evento-horas {
+  font-family: var(--fonte-numero-pilha);
+  font-variant-numeric: tabular-nums;
+}
+
+.evento-duracao {
+  font-family: var(--fonte-numero-pilha);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  margin-left: auto;
+}
+
+.evento-motivo {
+  flex: 1 1 100%;
+  padding-left: 20px;
+  color: var(--tinta-fraca);
+  overflow-wrap: anywhere;
+}
+
+/* Botão flutuante do relatório: fica no alcance do polegar. */
+.fab {
+  position: fixed;
+  right: 16px;
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  z-index: 20;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  color: #fff;
+  background: var(--acento);
+  border: none;
+  border-radius: 50%;
+  box-shadow: var(--sombra-m);
+  cursor: pointer;
+  transition: background var(--rapido), transform var(--rapido), box-shadow var(--rapido);
+}
+
+.fab:active {
+  transform: scale(0.94);
+  background: var(--acento-escuro);
+}
+
+/* ---------------------------------------------------------------------
    Modal de relatório
    --------------------------------------------------------------------- */
 
@@ -1771,6 +2110,49 @@ table.tabela tbody tr:last-child td {
   margin-top: 16px;
 }
 
+.modal-rodape--duplo {
+  gap: 10px;
+}
+
+.modal-rodape--duplo .botao {
+  flex: 1 1 0;
+}
+
+/* Painel que sobe do rodapé, no gesto esperado de celular. */
+.modal-fundo--inferior {
+  align-items: flex-end;
+  padding: 0;
+}
+
+.modal-caixa--inferior {
+  max-width: none;
+  max-height: 88vh;
+  border-radius: var(--raio-g) var(--raio-g) 0 0;
+  border-bottom: none;
+  padding-bottom: calc(clamp(20px, 3vw, 28px) + env(safe-area-inset-bottom, 0px));
+  animation: subir-painel 260ms var(--saida-suave) both;
+}
+
+.modal-puxador {
+  display: block;
+  width: 38px;
+  height: 4px;
+  margin: -6px auto 14px;
+  border-radius: 999px;
+  background: var(--borda-media);
+}
+
+@keyframes subir-painel {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 /* ---------------------------------------------------------------------
    Telas estreitas
    --------------------------------------------------------------------- */
@@ -1813,6 +2195,18 @@ table.tabela tbody tr:last-child td {
   /* No celular o cronômetro vem primeiro: é o que o operador confere. */
   .op-estado {
     order: -1;
+  }
+}
+
+@media (max-width: 760px) {
+  /* Abaixo disto os chips assumem o papel do botão de filtros. */
+  .filtros-alternar {
+    display: none;
+  }
+
+  /* Espaço no rodapé para o botão flutuante não cobrir conteúdo. */
+  .painel {
+    padding-bottom: 88px;
   }
 }
 

@@ -73,3 +73,22 @@ export function segundosDoDia(iso: string): number {
   const d = new Date(iso);
   return d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds();
 }
+
+/**
+ * Duração compacta, para onde a tela é estreita: omite as unidades à
+ * esquerda que estão zeradas. `02h 05m`, `06m 47s`, `32s`.
+ *
+ * Não substitui `formatarDuracao`: a tabela e os PDFs continuam com o
+ * formato completo, onde as durações precisam alinhar em coluna.
+ */
+export function formatarDuracaoCurta(segundosTotais: number): string {
+  const s = Math.max(0, Math.floor(segundosTotais));
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const seg = s % 60;
+  const dd = (n: number) => String(n).padStart(2, "0");
+
+  if (h > 0) return `${dd(h)}h ${dd(m)}m`;
+  if (m > 0) return `${dd(m)}m ${dd(seg)}s`;
+  return `${dd(seg)}s`;
+}

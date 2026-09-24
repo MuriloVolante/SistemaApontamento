@@ -226,6 +226,26 @@ existe um campo "Tipo" nos filtros — seria a mesma coisa duas vezes. Os totais
 continuam calculados sobre a consulta inteira, senão o card clicado zeraria os
 outros dois.
 
+#### No celular
+
+Abaixo de 760 px a tabela deixa de caber e o histórico troca de forma — não
+por CSS, mas trocando a árvore: só uma das duas existe no DOM.
+
+A tabela é um log de eventos, boa para auditoria e ruim para decidir. No
+celular ela desce um nível e o que aparece é **um card por OS, etapa e dia**,
+não por evento:
+
+- os três números numa linha só, com a fatia de ociosidade em percentual;
+- uma barra de operação contra pausa no lugar das colunas Tipo, Início, Fim e
+  Tempo;
+- as justificativas de parada somadas no card — "banheiro (3× · 45s)";
+- tocar no card abre a linha do tempo, com os horários evento a evento.
+
+A ordenação padrão é por maior tempo, com um atalho para maior percentual
+parado — nunca pelo `#`, que numa tela pequena não diz nada. Os filtros viram
+chips no topo e abrem num painel que sobe do rodapé; o relatório vira botão
+flutuante.
+
 **Gerar relatório** abre um modal já preenchido com OS, Etapa e Tipo da tela;
 ali se informa Data Início e Data Fim e escolhe-se entre:
 
@@ -299,6 +319,7 @@ src/
       Totais.tsx        os três cards, usados por Dashboard e Histórico
       BuscaOs.tsx       busca de OS do dashboard
       historico/        tabela, filtros laterais e modal de relatório
+        CartoesOs.tsx   histórico em cards, para telas estreitas
       etapas/           cadastro de etapas
     globals.css         estilos (operador com alvos grandes de toque)
   components/
@@ -311,6 +332,7 @@ src/
     transmissor.ts      relógio único que difunde mudanças para as telas
     repo-sqlite.ts      implementação local (padrão)
     repo-supabase.ts    implementação em nuvem (opcional)
+    agrupar.ts          junta eventos em blocos de OS + etapa + dia
     tempo.ts            HH:MM:SS, diferenças e limites de data
     pdf.ts              relatórios analítico e sintético
     maquina.ts          etapa configurada no localStorage

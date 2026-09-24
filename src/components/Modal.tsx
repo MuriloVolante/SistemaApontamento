@@ -7,6 +7,11 @@ interface Props {
   titulo: string;
   aoFechar: () => void;
   children: React.ReactNode;
+  /**
+   * "centro" é o diálogo comum; "inferior" sobe do rodapé, que é o gesto
+   * esperado num celular — fica ao alcance do polegar.
+   */
+  variante?: "centro" | "inferior";
 }
 
 /**
@@ -17,7 +22,7 @@ interface Props {
  * medir por ele, e não pela janela — foi o que deixou o escurecido cobrindo
  * só o miolo da tela. Saindo da árvore, o fundo cobre a janela inteira.
  */
-export default function Modal({ titulo, aoFechar, children }: Props) {
+export default function Modal({ titulo, aoFechar, children, variante = "centro" }: Props) {
   const [montado, setMontado] = useState(false);
 
   useEffect(() => setMontado(true), []);
@@ -44,7 +49,7 @@ export default function Modal({ titulo, aoFechar, children }: Props) {
 
   return createPortal(
     <div
-      className="modal-fundo"
+      className={`modal-fundo ${variante === "inferior" ? "modal-fundo--inferior" : ""}`}
       role="dialog"
       aria-modal="true"
       aria-label={titulo}
@@ -52,7 +57,8 @@ export default function Modal({ titulo, aoFechar, children }: Props) {
         if (e.target === e.currentTarget) fechar();
       }}
     >
-      <div className="modal-caixa">
+      <div className={`modal-caixa ${variante === "inferior" ? "modal-caixa--inferior" : ""}`}>
+        {variante === "inferior" && <span className="modal-puxador" aria-hidden="true" />}
         <h2 className="modal-titulo">{titulo}</h2>
         {children}
       </div>
