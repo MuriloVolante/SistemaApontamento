@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Icone from "@/components/Icone";
 import { agruparPorOsEtapa, ordenarGrupos } from "@/lib/agrupar";
 import type { CriterioGrupo, GrupoOs } from "@/lib/agrupar";
+import CardsTotais from "../Totais";
 import { formatarDuracaoCurta, formatarHora } from "@/lib/tempo";
 import type { LinhaApontamento, Totais } from "@/lib/tipos";
 
@@ -35,26 +36,11 @@ export default function CartoesOs({ linhas, totais, carregando }: Props) {
     [linhas, criterio]
   );
 
-  const percentualPausa = totais.total > 0 ? Math.round((totais.pausa / totais.total) * 100) : 0;
-
   return (
     <>
-      {/* Os três números numa linha só: é o que cabe e o que importa. */}
-      <div className="kpis">
-        <span className="kpi">
-          <em>Total</em>
-          {formatarDuracaoCurta(totais.total)}
-        </span>
-        <span className="kpi kpi--operacao">
-          <em>Op</em>
-          {formatarDuracaoCurta(totais.operacao)}
-        </span>
-        <span className="kpi kpi--pausa">
-          <em>Pausa</em>
-          {formatarDuracaoCurta(totais.pausa)}
-          <b>{percentualPausa}%</b>
-        </span>
-      </div>
+      {/* Os mesmos cards do dashboard: ícone, faixa de cor e rótulo por
+          extenso. A fatia de ociosidade entra sob o card de pausa. */}
+      <CardsTotais totais={totais} mostrarPercentualPausa />
 
       {grupos.length > 1 && (
         <div className="ordenar-grupos" role="group" aria-label="Ordenar por">
@@ -134,7 +120,7 @@ function CartaoGrupo({
       </div>
 
       <p className="grupo-legenda">
-        <span className="grupo-percentual">{percentualOp}% op</span>
+        <span className="grupo-percentual">{percentualOp}% em operação</span>
         {grupo.motivos.length > 0 && (
           <span className="grupo-motivos">
             {grupo.motivos.map((m) => (

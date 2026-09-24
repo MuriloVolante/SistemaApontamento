@@ -235,15 +235,16 @@ A tabela é um log de eventos, boa para auditoria e ruim para decidir. No
 celular ela desce um nível e o que aparece é **um card por OS, etapa e dia**,
 não por evento:
 
-- os três números numa linha só, com a fatia de ociosidade em percentual;
+- os mesmos três cards do dashboard, com o percentual de ociosidade sob o
+  card de pausa;
 - uma barra de operação contra pausa no lugar das colunas Tipo, Início, Fim e
   Tempo;
 - as justificativas de parada somadas no card — "banheiro (3× · 45s)";
 - tocar no card abre a linha do tempo, com os horários evento a evento.
 
 A ordenação padrão é por maior tempo, com um atalho para maior percentual
-parado — nunca pelo `#`, que numa tela pequena não diz nada. Os filtros viram
-chips no topo e abrem num painel que sobe do rodapé; o relatório vira botão
+parado — nunca pelo `#`, que numa tela pequena não diz nada. O botão de
+filtros abre um painel que sobe do rodapé, e o relatório vira botão
 flutuante.
 
 **Gerar relatório** abre um modal já preenchido com OS, Etapa e Tipo da tela;

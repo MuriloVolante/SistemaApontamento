@@ -13,6 +13,8 @@ interface Props {
   /** Quando informado, os cards viram filtro: clicar recorta a tabela. */
   recorte?: Recorte;
   aoRecortar?: (novo: Recorte) => void;
+  /** Mostra a fatia de ociosidade sob o card de pausa. */
+  mostrarPercentualPausa?: boolean;
 }
 
 const CARDS: Array<{
@@ -50,8 +52,15 @@ const CARDS: Array<{
  * No Histórico eles também são o filtro por tipo: clicar recorta a tabela,
  * clicar de novo desfaz.
  */
-export default function CardsTotais({ totais, recorte, aoRecortar }: Props) {
+export default function CardsTotais({
+  totais,
+  recorte,
+  aoRecortar,
+  mostrarPercentualPausa = false,
+}: Props) {
   const clicavel = typeof aoRecortar === "function";
+  const percentualPausa =
+    totais.total > 0 ? Math.round((totais.pausa / totais.total) * 100) : 0;
 
   return (
     <div className="totais">
@@ -67,6 +76,9 @@ export default function CardsTotais({ totais, recorte, aoRecortar }: Props) {
             </span>
             <p className="total-rotulo">{c.rotulo}</p>
             <p className="total-valor">{formatarDuracao(c.valor(totais))}</p>
+            {mostrarPercentualPausa && c.chave === "PAUSA" && (
+              <p className="total-extra">{percentualPausa}% do tempo</p>
+            )}
           </>
         );
 

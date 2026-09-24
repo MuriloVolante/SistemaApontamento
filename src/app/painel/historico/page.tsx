@@ -182,14 +182,6 @@ export default function Historico() {
     setRecorte(null);
   }
 
-  /** Rótulo curto do filtro de data, para o chip. */
-  function rotuloData() {
-    if (!data) return "Todas as datas";
-    if (data === dataLocalISO(new Date().toISOString())) return "Hoje";
-    const [, mes, dia] = data.split("-");
-    return `${dia}/${mes}`;
-  }
-
   const campos = (
     <div className="filtros-campos">
       <div>
@@ -262,33 +254,6 @@ export default function Historico() {
       {emCartoes ? (
         /* ---- celular: chips, KPIs e um card por OS ---- */
         <>
-          <div className="chips">
-            <button type="button" className="chip" onClick={() => setFiltrosAbertos(true)}>
-              {rotuloData()} <span aria-hidden="true">▾</span>
-            </button>
-            <button
-              type="button"
-              className={`chip ${etapaId ? "chip--ativo" : ""}`}
-              onClick={() => setFiltrosAbertos(true)}
-            >
-              {etapaId ? nomeEtapaFiltro : "Etapa"} <span aria-hidden="true">▾</span>
-            </button>
-            <button
-              type="button"
-              className={`chip ${os.trim() ? "chip--ativo" : ""}`}
-              onClick={() => setFiltrosAbertos(true)}
-            >
-              <Icone nome="lupa" tamanho={13} />
-              {os.trim() || "OS"}
-            </button>
-            {filtrosAtivos > 0 && (
-              <button type="button" className="chip chip--limpar" onClick={limparFiltros}>
-                <Icone nome="fechar" tamanho={12} />
-                Limpar
-              </button>
-            )}
-          </div>
-
           <CartoesOs linhas={linhas} totais={totais} carregando={carregando} />
 
           <button

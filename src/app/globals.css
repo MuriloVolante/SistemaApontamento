@@ -1031,6 +1031,19 @@ textarea.op-campo {
   transition: color var(--normal);
 }
 
+.total-extra {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--tinta-fraca);
+  margin: 3px 0 0;
+  font-variant-numeric: tabular-nums;
+  transition: color var(--normal);
+}
+
+.total-cartao--aceso .total-extra {
+  color: rgba(255, 255, 255, 0.85);
+}
+
 .total-valor {
   font-family: var(--fonte-numero-pilha);
   transition: color var(--normal);
@@ -1658,109 +1671,8 @@ table.tabela tbody tr:last-child td {
 }
 
 /* ---------------------------------------------------------------------
-   Histórico no celular — chips, KPIs e um card por OS
+   Histórico no celular — um card por OS
    --------------------------------------------------------------------- */
-
-.chips {
-  display: flex;
-  gap: 7px;
-  overflow-x: auto;
-  scrollbar-width: none;
-  padding-bottom: 2px;
-  margin-bottom: 12px;
-}
-
-.chips::-webkit-scrollbar {
-  display: none;
-}
-
-.chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  flex: 0 0 auto;
-  height: 34px;
-  padding: 0 13px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: var(--tinta-media);
-  background: var(--superficie);
-  border: 1px solid var(--borda-media);
-  border-radius: 999px;
-  box-shadow: var(--sombra-xs);
-  cursor: pointer;
-  white-space: nowrap;
-  max-width: 62vw;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  transition: background var(--rapido), border-color var(--rapido), color var(--rapido);
-}
-
-.chip:active {
-  transform: scale(0.97);
-}
-
-.chip--ativo {
-  color: var(--acento);
-  border-color: var(--acento);
-  background: var(--acento-tenue);
-  font-weight: 600;
-}
-
-.chip--limpar {
-  color: var(--tinta-fraca);
-}
-
-/* Os três números numa linha só. */
-.kpis {
-  display: flex;
-  align-items: stretch;
-  gap: 1px;
-  background: var(--borda);
-  border: 1px solid var(--borda);
-  border-radius: var(--raio);
-  overflow: hidden;
-  margin-bottom: 12px;
-}
-
-.kpi {
-  flex: 1 1 0;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  padding: 9px 10px;
-  background: var(--superficie);
-  font-family: var(--fonte-numero-pilha);
-  font-size: 0.95rem;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-.kpi em {
-  font-family: var(--fonte-texto-pilha);
-  font-size: 0.65rem;
-  font-style: normal;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.09em;
-  color: var(--tinta-fraca);
-}
-
-.kpi--operacao {
-  color: var(--verde-escuro);
-}
-
-.kpi--pausa {
-  color: var(--ambar-escuro);
-}
-
-.kpi b {
-  font-size: 0.75rem;
-  font-weight: 600;
-  opacity: 0.8;
-}
 
 /* Critério de ordenação dos blocos. */
 .ordenar-grupos {
@@ -2199,11 +2111,6 @@ table.tabela tbody tr:last-child td {
 }
 
 @media (max-width: 760px) {
-  /* Abaixo disto os chips assumem o papel do botão de filtros. */
-  .filtros-alternar {
-    display: none;
-  }
-
   /* Espaço no rodapé para o botão flutuante não cobrir conteúdo. */
   .painel {
     padding-bottom: 88px;
