@@ -15,6 +15,14 @@ type Situacao = "PARADO" | "EM_ANDAMENTO" | "PAUSADO";
 /** De quanto em quanto tempo o estado é reconferido no banco. */
 const INTERVALO_SINCRONIA = 30_000;
 
+/**
+ * Tela do operador, uma etapa de cada vez.
+ *
+ * Nada de mostrar os seis controles juntos com quatro deles apagados: o
+ * operador vê só o que pode fazer agora. Parado, a tela pede a OS e oferece
+ * Iniciar. Rodando, vira cronômetro com Parar e Finalizar. O motivo da parada
+ * e a confirmação de fim acontecem em diálogo, no momento em que importam.
+ */
 export default function TelaOperador() {
   const router = useRouter();
 
@@ -26,7 +34,8 @@ export default function TelaOperador() {
 
   const [os, setOs] = useState("");
   const [motivo, setMotivo] = useState("");
-  const [confirmando, setConfirmando] = useState(false);
+  const [pedindoMotivo, setPedindoMotivo] = useState(false);
+  const [confirmandoFim, setConfirmandoFim] = useState(false);
 
   // Diferença entre o relógio do servidor e o do navegador. O cronômetro é
   // sempre now() + desvio - segmento_inicio: nunca um contador incremental.
@@ -115,7 +124,7 @@ export default function TelaOperador() {
   if (carregando) {
     return (
       <main className="aviso-config">
-        <p className="op-estado-texto">Carregando…</p>
+        <p className="vazio">Carregando…</p>
       </main>
     );
   }
@@ -137,7 +146,17 @@ export default function TelaOperador() {
             : `A etapa ${estado.etapa.nome} foi inativada.`}{" "}
           Escolha outra etapa para esta máquina.
         </p>
-        <Link href="/configurar" className="op-botao op-botao--retomar" style={{ display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", marginTop: 14 }}>
+        <Link
+          href="/configurar"
+          className="op-botao op-botao--retomar"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            textDecoration: "none",
+            marginTop: 14,
+          }}
+        >
           Trocar etapa
         </Link>
       </main>
@@ -148,30 +167,11 @@ export default function TelaOperador() {
 
   const sessao = estado.sessao;
   const situacao: Situacao = !sessao ? "PARADO" : sessao.status;
-
-  const osExibida = sessao ? sessao.numero_os : os;
-  const motivoExibido = situacao === "PAUSADO" ? sessao?.motivo ?? "" : motivo;
-
-  const osBloqueada = situacao !== "PARADO";
-  const podeIniciar = situacao === "PARADO" && os.trim().length > 0;
-  const motivoBloqueado = situacao !== "EM_ANDAMENTO";
-  const podeParar = situacao === "EM_ANDAMENTO" && motivo.trim().length > 0;
-  const podeRetomar = situacao === "PAUSADO";
-  const podeFinalizar = situacao !== "PARADO";
+  const pausado = situacao === "PAUSADO";
 
   const decorrido = sessao
     ? diferencaEmSegundos(sessao.segmento_inicio, new Date(Date.now() + desvioRelogio.current))
     : 0;
-
-  const rotuloSituacao =
-    situacao === "PARADO" ? "Parado" : situacao === "EM_ANDAMENTO" ? "Em andamento" : "Pausado";
-
-  const classeEstado =
-    situacao === "EM_ANDAMENTO"
-      ? "op-estado op-estado--andamento"
-      : situacao === "PAUSADO"
-      ? "op-estado op-estado--pausado"
-      : "op-estado";
 
   // ---- ações --------------------------------------------------------------
 
@@ -182,7 +182,7 @@ export default function TelaOperador() {
 
   async function aoParar() {
     if (!etapaId) return;
-    await executar(() => parar(etapaId, motivo));
+    if (await executar(() => parar(etapaId, motivo))) setPedindoMotivo(false);
   }
 
   async function aoRetomar() {
@@ -193,7 +193,7 @@ export default function TelaOperador() {
   async function aoFinalizar() {
     if (!etapaId) return;
     const ok = await executar(() => finalizar(etapaId));
-    setConfirmando(false);
+    setConfirmandoFim(false);
     if (ok) {
       setOs("");
       setMotivo("");
@@ -221,99 +221,127 @@ export default function TelaOperador() {
 
       {erro && <p className="op-aviso">{erro}</p>}
 
-      <div className="op-colunas">
-        <section className="op-form">
-          <div>
-            <label className="op-rotulo" htmlFor="campo-os">
-              OS
-            </label>
-            <input
-              id="campo-os"
-              className="op-campo"
-              type="text"
-              inputMode="numeric"
-              autoComplete="off"
-              placeholder="Digite o número da OS"
-              value={osExibida}
-              disabled={osBloqueada}
-              onChange={(e) => setOs(e.target.value)}
-            />
-          </div>
+      {situacao === "PARADO" ? (
+        /* ---- nada em curso: só a OS e o Iniciar ---- */
+        <form
+          className="op-partida"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (os.trim()) aoIniciar();
+          }}
+        >
+          <p className="op-chamada">Digite o número da OS e clique em iniciar</p>
+
+          <input
+            className="op-campo op-campo--partida"
+            type="text"
+            inputMode="numeric"
+            autoComplete="off"
+            autoFocus
+            placeholder="Número da OS"
+            aria-label="Número da OS"
+            value={os}
+            onChange={(e) => setOs(e.target.value)}
+          />
 
           <button
-            type="button"
+            type="submit"
             className="op-botao op-botao--iniciar"
-            disabled={!podeIniciar || ocupado}
-            onClick={aoIniciar}
+            disabled={!os.trim() || ocupado}
           >
             Iniciar
           </button>
-
-          <div>
-            <label className="op-rotulo" htmlFor="campo-motivo">
-              Motivo da parada
-            </label>
-            <textarea
-              id="campo-motivo"
-              className="op-campo"
-              rows={2}
-              placeholder={motivoBloqueado ? "" : "Descreva o motivo para poder parar"}
-              value={motivoExibido}
-              disabled={motivoBloqueado}
-              onChange={(e) => setMotivo(e.target.value)}
-            />
+        </form>
+      ) : (
+        /* ---- em curso: o cronômetro manda na tela ---- */
+        <section className="op-curso">
+          <div className={`op-relogio ${pausado ? "op-relogio--pausado" : "op-relogio--ativo"}`}>
+            <p className="op-relogio-os">{sessao?.numero_os}</p>
+            <p className="op-relogio-tempo">{formatarDuracao(decorrido)}</p>
+            <p className="op-relogio-situacao">{pausado ? "Parado" : "Em andamento"}</p>
+            {pausado && sessao?.motivo && <p className="op-relogio-motivo">{sessao.motivo}</p>}
           </div>
 
-          <div className="op-dupla">
+          <div className="op-acoes">
+            {pausado ? (
+              <button
+                type="button"
+                className="op-botao op-botao--retomar"
+                disabled={ocupado}
+                onClick={aoRetomar}
+              >
+                Retomar
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="op-botao op-botao--parar"
+                disabled={ocupado}
+                onClick={() => {
+                  setMotivo("");
+                  setPedindoMotivo(true);
+                }}
+              >
+                Parar
+              </button>
+            )}
+
+            <button
+              type="button"
+              className="op-botao op-botao--finalizar"
+              disabled={ocupado}
+              onClick={() => setConfirmandoFim(true)}
+            >
+              Finalizar
+            </button>
+          </div>
+        </section>
+      )}
+
+      {/* O motivo é pedido na hora de parar, não antes. */}
+      {pedindoMotivo && (
+        <Modal titulo="Por que a produção vai parar?" aoFechar={() => setPedindoMotivo(false)}>
+          <textarea
+            className="op-campo op-campo--motivo"
+            rows={3}
+            autoFocus
+            placeholder="Ex.: troca de bobina, falta de material"
+            aria-label="Motivo da parada"
+            value={motivo}
+            onChange={(e) => setMotivo(e.target.value)}
+          />
+
+          <div className="modal-acoes">
+            <button
+              type="button"
+              className="op-botao"
+              onClick={() => setPedindoMotivo(false)}
+              disabled={ocupado}
+            >
+              Cancelar
+            </button>
             <button
               type="button"
               className="op-botao op-botao--parar"
-              disabled={!podeParar || ocupado}
               onClick={aoParar}
+              disabled={!motivo.trim() || ocupado}
             >
               Parar
             </button>
-            <button
-              type="button"
-              className="op-botao op-botao--retomar"
-              disabled={!podeRetomar || ocupado}
-              onClick={aoRetomar}
-            >
-              Retomar
-            </button>
           </div>
+        </Modal>
+      )}
 
-          <button
-            type="button"
-            className="op-botao op-botao--finalizar"
-            disabled={!podeFinalizar || ocupado}
-            onClick={() => setConfirmando(true)}
-          >
-            Finalizar
-          </button>
-        </section>
-
-        <section className={classeEstado} aria-live="polite">
-          <p className="op-estado-faixa">Situação</p>
-          <p className="op-estado-texto">{rotuloSituacao}</p>
-          {situacao === "PAUSADO" && sessao?.motivo && (
-            <p className="op-estado-motivo">{sessao.motivo}</p>
-          )}
-          <p className="op-cronometro">{formatarDuracao(decorrido)}</p>
-          <p className="op-os-atual">{sessao ? `OS ${sessao.numero_os}` : "Nenhuma OS em curso"}</p>
-        </section>
-      </div>
-
-      {confirmando && (
+      {confirmandoFim && (
         <Modal
           titulo="Deseja realmente finalizar o apontamento desta etapa?"
-          aoFechar={() => setConfirmando(false)}
+          aoFechar={() => setConfirmandoFim(false)}
         >
           <div className="modal-acoes">
             <button
               type="button"
               className="op-botao"
-              onClick={() => setConfirmando(false)}
+              onClick={() => setConfirmandoFim(false)}
               disabled={ocupado}
             >
               Não

@@ -328,54 +328,68 @@ textarea {
   box-shadow: var(--sombra-xs);
 }
 
-.op-colunas {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: clamp(12px, 1.6vw, 20px);
-  align-items: stretch;
-}
+/* ---- uma etapa de cada vez ----------------------------------------------
 
-.op-form {
+   O operador vê só o que pode fazer agora. Parado: a OS e o Iniciar.
+   Rodando: o cronômetro e as duas ações. O motivo da parada e a confirmação
+   de fim vivem em diálogo, no instante em que importam. */
+
+.op-partida,
+.op-curso {
   display: flex;
   flex-direction: column;
-  gap: clamp(10px, 1.2vw, 14px);
+  align-items: center;
+  gap: clamp(14px, 2.4vw, 22px);
+  width: 100%;
+  max-width: 560px;
+  margin: clamp(16px, 5vh, 56px) auto 0;
+  animation: surgir 260ms var(--saida-suave) both;
 }
 
-.op-rotulo {
-  display: block;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--tinta-fraca);
-  margin-bottom: 6px;
+.op-chamada {
+  font-size: clamp(1.05rem, 2.4vw, 1.35rem);
+  font-weight: 500;
+  color: var(--tinta-media);
+  text-align: center;
+  text-wrap: balance;
+  margin: 0;
 }
 
 .op-campo {
   width: 100%;
-  height: 52px;
-  padding: 0 14px;
-  font-size: 1.2rem;
+  height: 56px;
+  padding: 0 16px;
+  font-size: 1.25rem;
   font-weight: 500;
   color: var(--tinta);
   background: var(--superficie);
   border: 1px solid var(--borda-media);
   border-radius: var(--raio);
   box-shadow: var(--sombra-xs);
-  transition: border-color var(--rapido), box-shadow var(--rapido), background var(--rapido);
+  transition: border-color var(--rapido), box-shadow var(--rapido);
 }
 
-textarea.op-campo {
-  height: 78px;
-  padding: 11px 14px;
-  font-size: 1rem;
-  line-height: 1.35;
+.op-campo--partida {
+  height: 64px;
+  font-size: clamp(1.4rem, 3.2vw, 1.8rem);
+  font-weight: 600;
+  text-align: center;
+  letter-spacing: 0.02em;
+}
+
+.op-campo--motivo {
+  height: auto;
+  padding: 12px 14px;
+  font-size: 1.05rem;
+  font-weight: 400;
+  line-height: 1.4;
   resize: none;
 }
 
 .op-campo::placeholder {
   color: var(--tinta-fraca);
   font-weight: 400;
+  letter-spacing: 0;
 }
 
 .op-campo:hover:not(:disabled) {
@@ -388,22 +402,12 @@ textarea.op-campo {
   box-shadow: var(--anel);
 }
 
-.op-campo:disabled {
-  background: var(--superficie-3);
-  color: var(--tinta-fraca);
-  border-color: var(--borda);
-  box-shadow: none;
-  -webkit-text-fill-color: var(--tinta-fraca);
-  opacity: 1;
-}
-
-/* Botões grandes do operador. */
+/* Botões: alvo de toque confortável, texto legível a um braço de distância. */
 .op-botao {
-  position: relative;
   width: 100%;
-  height: 56px;
-  padding: 0 14px;
-  font-size: 1.02rem;
+  height: 64px;
+  padding: 0 16px;
+  font-size: clamp(1rem, 2.2vw, 1.15rem);
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -452,115 +456,91 @@ textarea.op-campo {
 }
 
 .op-botao--retomar:not(:disabled) {
-  background: var(--acento);
+  background: var(--verde);
 }
 .op-botao--retomar:not(:disabled):hover {
-  background: var(--acento-escuro);
+  background: var(--verde-escuro);
 }
 
-.op-botao--finalizar:not(:disabled):hover {
-  background: var(--escuro-2);
-}
-
-.op-dupla {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: clamp(10px, 1.2vw, 14px);
-}
-
-/* Cartão de situação + cronômetro. */
-.op-estado {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+.op-botao--finalizar:not(:disabled) {
   background: var(--superficie);
-  border: 1px solid var(--borda-media);
+  color: var(--tinta-media);
+  border-color: var(--borda-forte);
+}
+.op-botao--finalizar:not(:disabled):hover {
+  background: var(--escuro);
+  border-color: var(--escuro);
+  color: #fff;
+}
+
+/* ---- em curso ---- */
+
+.op-curso {
+  max-width: 620px;
+}
+
+/* Bloco de cor cheia: a situação se lê do outro lado do salão. */
+.op-relogio {
+  width: 100%;
+  padding: clamp(24px, 5vw, 44px) clamp(16px, 3vw, 28px);
   border-radius: var(--raio-g);
-  box-shadow: var(--sombra-p);
-  padding: clamp(16px, 2vw, 22px);
+  box-shadow: var(--sombra-m);
   text-align: center;
-  overflow: hidden;
-  transition: background var(--normal), border-color var(--normal), box-shadow var(--normal);
+  color: #fff;
+  transition: background var(--normal);
 }
 
-/* Faixa no topo: identifica a situação de longe, antes mesmo de ler. */
-.op-estado::before {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 4px;
-  background: var(--borda-forte);
-}
-
-.op-estado--andamento {
-  border-color: var(--verde-borda);
-  background: var(--verde-tenue);
-}
-
-.op-estado--andamento::before {
+.op-relogio--ativo {
   background: var(--verde);
 }
 
-.op-estado--andamento .op-estado-texto {
-  color: var(--verde-escuro);
-}
-
-.op-estado--pausado {
-  border-color: var(--ambar-borda);
-  background: var(--ambar-tenue);
-}
-
-.op-estado--pausado::before {
+.op-relogio--pausado {
   background: var(--ambar);
 }
 
-.op-estado--pausado .op-estado-texto {
-  color: var(--ambar-escuro);
-}
-
-.op-estado-faixa {
-  font-size: 0.7rem;
+.op-relogio-os {
+  font-size: 0.8rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.14em;
-  color: var(--tinta-fraca);
-  margin: 0 0 12px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--borda);
-}
-
-.op-estado-texto {
-  font-size: clamp(1.3rem, 2.4vw, 1.6rem);
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  margin: 0 0 4px;
-}
-
-.op-estado-motivo {
-  font-size: 0.9rem;
-  color: var(--tinta-fraca);
-  margin: 0 0 6px;
+  opacity: 0.85;
+  margin: 0;
   overflow-wrap: anywhere;
 }
 
-.op-cronometro {
+.op-relogio-tempo {
   font-family: var(--fonte-numero-pilha);
-  font-size: clamp(2.4rem, 6.5vw, 3.9rem);
+  font-size: clamp(2.8rem, 10vw, 5rem);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-  line-height: 1.05;
   letter-spacing: -0.02em;
-  margin: 8px 0 0;
+  line-height: 1.05;
+  margin: 8px 0 6px;
 }
 
-.op-os-atual {
-  font-size: 0.88rem;
-  font-weight: 500;
-  color: var(--tinta-fraca);
-  margin: 12px 0 0;
+.op-relogio-situacao {
+  font-size: clamp(1rem, 2.4vw, 1.2rem);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  margin: 0;
+  opacity: 0.95;
+}
+
+.op-relogio-motivo {
+  font-size: 0.95rem;
+  margin: 10px auto 0;
   padding-top: 10px;
-  border-top: 1px solid var(--borda);
+  max-width: 34ch;
+  border-top: 1px solid rgba(255, 255, 255, 0.28);
+  opacity: 0.9;
+  overflow-wrap: anywhere;
+}
+
+.op-acoes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(10px, 1.6vw, 16px);
+  width: 100%;
 }
 
 .op-aviso {
@@ -2099,17 +2079,6 @@ table.tabela tbody tr:last-child td {
   }
 }
 
-@media (max-width: 860px) {
-  .op-colunas {
-    grid-template-columns: 1fr;
-  }
-
-  /* No celular o cronômetro vem primeiro: é o que o operador confere. */
-  .op-estado {
-    order: -1;
-  }
-}
-
 @media (max-width: 760px) {
   /* Espaço no rodapé para o botão flutuante não cobrir conteúdo. */
   .painel {
@@ -2158,13 +2127,14 @@ table.tabela tbody tr:last-child td {
 }
 
 @media (max-width: 520px) {
-  .op-dupla,
   .modal-acoes {
     grid-template-columns: 1fr;
   }
 
-  .op-botao {
-    height: 60px;
+  /* As duas ações continuam lado a lado: uma sobre a outra convidaria ao
+     toque errado justamente entre Parar e Finalizar. */
+  .op-acoes {
+    gap: 10px;
   }
 
   .lista-etapas li {

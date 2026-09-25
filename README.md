@@ -163,16 +163,23 @@ Fechar o navegador não perde nada: o apontamento em curso fica na tabela
 partir de `segmento_inicio`. O `localStorage` guarda apenas qual etapa esta
 máquina aponta — nunca estado nem tempo decorrido.
 
-### Habilitação dos controles
+### Uma etapa de cada vez
 
-| Controle | Parado | Em andamento | Pausado |
-|---|---|---|---|
-| Campo OS | habilitado | bloqueado | bloqueado |
-| Iniciar | habilitado | desabilitado | desabilitado |
-| Motivo parada | desabilitado | habilitado | bloqueado |
-| Parar | desabilitado | só com motivo preenchido | desabilitado |
-| Retomar | desabilitado | desabilitado | habilitado |
-| Finalizar | desabilitado | habilitado | habilitado |
+A tela do operador mostra só o que pode ser feito agora, em vez de exibir os
+seis controles juntos com quatro deles apagados:
+
+| Situação | O que aparece |
+|---|---|
+| Parado | "Digite o número da OS e clique em iniciar", o campo e o botão Iniciar |
+| Em andamento | Cronômetro em bloco verde, com **Parar** e **Finalizar** |
+| Pausado | Cronômetro em bloco âmbar com o motivo, e **Retomar** e **Finalizar** |
+
+O motivo da parada é pedido num diálogo ao tocar em **Parar** — com Cancelar
+e Parar, e o Parar bloqueado enquanto o motivo estiver vazio. **Finalizar**
+pede confirmação em diálogo próprio.
+
+O bloco de cor cheia é o que permite ler a situação do outro lado do salão,
+antes mesmo de ler a palavra.
 
 ---
 
