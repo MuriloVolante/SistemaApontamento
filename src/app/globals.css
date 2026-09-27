@@ -1,5 +1,5 @@
 /* =====================================================================
-   Sistema de Apontamento Gráfico: sistema visual
+   Mautus: sistema visual
 
    Sóbrio, minimalista e com acabamento. Paleta neutra fria com um único
    acento em azul-petróleo; cores fortes ficam reservadas para significado
@@ -275,6 +275,21 @@ textarea {
   align-items: center;
   gap: 12px;
   min-width: 0;
+}
+
+/* Marca discreta à direita: identifica o sistema sem disputar com o nome da
+   etapa, que é o que o operador precisa ver. */
+.op-cabecalho-dir {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 0 0 auto;
+}
+
+.op-marca {
+  display: block;
+  color: var(--tinta-fraca);
+  opacity: 0.8;
 }
 
 .op-etapa {
@@ -664,6 +679,23 @@ textarea {
   max-width: 100%;
   overflow-x: auto;
   scrollbar-width: none;
+}
+
+/* Logotipo no canto esquerdo, no espaço que a navbar já reserva dos dois
+   lados para as abas ficarem centradas. */
+.navbar-logo {
+  position: absolute;
+  left: var(--respiro);
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  color: #fff;
+  opacity: 0.92;
+  transition: opacity var(--rapido);
+}
+
+.navbar-logo:hover {
+  opacity: 1;
 }
 
 /* Um sublinhado só para todas as abas: em vez de sumir de uma e aparecer na
@@ -2035,16 +2067,10 @@ table.tabela tbody tr:last-child td {
   animation: surgir 280ms var(--saida-suave) both;
 }
 
-.entrada-selo {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  margin-bottom: 16px;
-  color: var(--acento);
-  background: var(--acento-tenue);
-  border-radius: 50%;
+.entrada-marca {
+  display: block;
+  margin-bottom: 22px;
+  color: var(--tinta);
 }
 
 .entrada-titulo {
@@ -2554,6 +2580,13 @@ table.tabela tbody tr:last-child td {
   .navbar-interna {
     justify-content: flex-start;
     padding-left: var(--respiro);
+  }
+
+  /* Na tela estreita as abas encostam à esquerda e o espaço é delas; no
+     operador, o espaço é do nome da etapa. */
+  .navbar-logo,
+  .op-marca {
+    display: none;
   }
 
   .painel-topo {

@@ -3,13 +3,13 @@
 import { useEffect } from "react";
 
 /** Nome da janela quando a tela não tem um mais específico a dizer. */
-const PADRAO = "Sistema de Apontamento";
+const PADRAO = "Mautus";
 
 /**
  * Escreve o título da aba do navegador.
  *
  * Com dezoito computadores abertos no chão de fábrica, a aba é o que
- * distingue um do outro na barra de tarefas, e "Sistema de Apontamento" em
+ * distingue um do outro na barra de tarefas, e o nome do sistema em
  * todos eles não dizia nada. Cada máquina passa a mostrar o próprio nome.
  *
  * O observador existe porque o Next reaplica o `<title>` do layout sempre que

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Icone from "@/components/Icone";
+import Marca from "@/components/Marca";
 import useTituloJanela from "@/components/useTituloJanela";
 import { listarEtapas } from "../../actions";
 import { gravarEtapaConfigurada, lerEtapaConfigurada } from "@/lib/maquina";
@@ -52,9 +53,12 @@ export default function TelaConfiguracao() {
           )}
           <h1 className="op-etapa">Onde você está</h1>
         </div>
-        <Link href="/painel" className="op-link-discreto">
-          Painel
-        </Link>
+        <div className="op-cabecalho-dir">
+          <Marca altura={22} className="op-marca" />
+          <Link href="/painel" className="op-link-discreto">
+            Painel
+          </Link>
+        </div>
       </header>
 
       <p className="op-instrucao">

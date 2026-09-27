@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { sair } from "../acesso";
 import Icone from "@/components/Icone";
+import Marca from "@/components/Marca";
 import Transicao from "@/components/Transicao";
 import useTituloJanela from "@/components/useTituloJanela";
 import { ProvedorUsuario } from "./ContextoUsuario";
@@ -84,6 +85,10 @@ export default function NavPainel({ usuario, children }: Props) {
     <>
       <nav className="navbar">
         <div className="navbar-interna">
+          <Link href="/painel" className="navbar-logo" aria-label="Mautus, início do painel">
+            <Marca altura={26} />
+          </Link>
+
           <ul className="navbar-itens" ref={lista}>
             {paginas.map((p) => (
               <li key={p.href}>

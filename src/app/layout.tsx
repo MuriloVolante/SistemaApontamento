@@ -19,8 +19,8 @@ const plexSans = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Sistema de Apontamento",
-  description: "Apontamento de tempo de operação e parada por etapa de produção.",
+  title: "Mautus",
+  description: "Mautus: apontamento de tempo de operação e parada por etapa de produção.",
 };
 
 export const viewport: Viewport = {

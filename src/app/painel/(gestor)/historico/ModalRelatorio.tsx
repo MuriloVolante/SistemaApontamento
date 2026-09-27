@@ -108,14 +108,14 @@ export default function ModalRelatorio({ herdado, etapas, aoFechar }: Props) {
           setErro("Não há nada gravado com esses filtros. Tente outras datas.");
           return;
         }
-        gerarPdfAnalitico(linhas, totais, [...criterios(), `Registros: ${linhas.length}`]);
+        await gerarPdfAnalitico(linhas, totais, [...criterios(), `Registros: ${linhas.length}`]);
       } else {
         const linhas = await relatorioSintetico(filtro());
         if (linhas.length === 0) {
           setErro("Não há nada gravado com esses filtros. Tente outras datas.");
           return;
         }
-        gerarPdfSintetico(linhas, criterios());
+        await gerarPdfSintetico(linhas, criterios());
       }
       aoFechar();
     } catch {

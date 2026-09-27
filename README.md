@@ -1,6 +1,6 @@
-# Sistema de Apontamento Gráfico
+# Mautus
 
-Apontamento de tempo de operação e parada por etapa de produção. Duas partes:
+Sistema de apontamento de tempo de operação e parada por etapa de produção. Duas partes:
 a **tela do operador** (uma etapa por máquina, sem login) e o **painel de
 gestão** (com login, para gestores e vendedores).
 
@@ -137,6 +137,14 @@ gravado, percebido pela mudança desse maior `#`.
 ---
 
 ## Sistema visual
+
+**Marca.** O logotipo Mautus aparece na navbar do painel, no cartão de
+entrada, no canto da tela do operador (discreto, e escondido no celular para
+não apertar o nome da etapa) e no cabeçalho dos relatórios em PDF. O símbolo
+em quadrado escuro é o ícone da aba do navegador. O desenho mora em
+`src/lib/marca.ts` e é pintado na cor do texto em volta, então a mesma logo
+serve sobre fundo claro e escuro; trocar a logo é trocar esse arquivo e o
+`src/app/icon.svg`.
 
 Paleta neutra fria com **um único acento** em azul-petróleo. Cor forte é
 reservada para significado, nunca para decorar: verde é operação, âmbar é
@@ -504,6 +512,7 @@ src/
     acesso.ts                server actions: entrar, definir e trocar senha, sair
     usuarios.ts              server actions: cadastro de usuários
     globals.css              estilos (operador com alvos grandes de toque)
+    icon.svg                 ícone da aba do navegador (símbolo Mautus)
   components/
     GestaoEtapas.tsx         listar, adicionar, renomear, inativar, excluir
     Modal.tsx                modal renderizado por portal no body
@@ -511,6 +520,7 @@ src/
     Transicao.tsx            troca de tela deslizante
     useTituloJanela.ts       nome da tela na aba do navegador
     Icone.tsx                ícones no traço do Iconoir, embutidos
+    Marca.tsx                logotipo ou símbolo Mautus, na cor do texto em volta
   fontes/                    IBM Plex Sans (.woff2), para rodar sem internet
   lib/
     repositorio.ts           interface da camada de dados e escolha do banco
@@ -526,7 +536,8 @@ src/
     transmissor.ts           relógio único que difunde mudanças para as telas
     agrupar.ts               junta eventos em blocos de OS, etapa e dia
     tempo.ts                 durações, diferenças e limites de data
-    pdf.ts                   relatórios analítico e sintético
+    pdf.ts                   relatórios analítico e sintético, com o logotipo
+    marca.ts                 desenho da marca Mautus (fonte única da logo)
     maquina.ts               etapa configurada no localStorage
     tipos.ts                 tipos compartilhados
 supabase/

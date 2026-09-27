@@ -1,9 +1,9 @@
 @echo off
-title Sistema de Apontamento
+title Mautus
 cd /d "%~dp0"
 
 echo ============================================
-echo   Sistema de Apontamento
+echo   Mautus
 echo ============================================
 echo.
 

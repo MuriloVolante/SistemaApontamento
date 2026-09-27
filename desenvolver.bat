@@ -1,5 +1,5 @@
 @echo off
-title Apontamento - desenvolvimento
+title Mautus (desenvolvimento)
 cd /d "%~dp0"
 
 echo Modo de desenvolvimento: recarrega sozinho ao editar o codigo.

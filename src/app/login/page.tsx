@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import Icone from "@/components/Icone";
+import Marca from "@/components/Marca";
 import useTituloJanela from "@/components/useTituloJanela";
 import { definirSenha, entrar, precisaDefinirSenha } from "../acesso";
 import { TAMANHO_MINIMO } from "@/lib/regras-senha";
@@ -89,9 +89,7 @@ export default function TelaLogin() {
           else aoDefinirSenha();
         }}
       >
-        <span className="entrada-selo" aria-hidden="true">
-          <Icone nome="cadeado" tamanho={22} />
-        </span>
+        <Marca altura={40} className="entrada-marca" />
 
         {etapa === "ENTRADA" ? (
           <>

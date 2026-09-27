@@ -1,5 +1,5 @@
 -- =====================================================================
--- Sistema de Apontamento Gráfico: schema completo
+-- Mautus: schema completo
 -- Execute este arquivo no SQL Editor do Supabase (uma única vez).
 -- =====================================================================
 

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Modal from "@/components/Modal";
 import Icone from "@/components/Icone";
+import Marca from "@/components/Marca";
 import useTituloJanela from "@/components/useTituloJanela";
 import { conferirPassagem, finalizar, iniciar, obterEstado, parar, retomar } from "../actions";
 import { lerEtapaConfigurada } from "@/lib/maquina";
@@ -256,9 +257,12 @@ export default function TelaOperador() {
           </Link>
           <h1 className="op-etapa">{estado.etapa.nome}</h1>
         </div>
-        <Link href="/painel" className="op-link-discreto" title="Abrir o painel de gestão">
-          Painel
-        </Link>
+        <div className="op-cabecalho-dir">
+          <Marca altura={22} className="op-marca" />
+          <Link href="/painel" className="op-link-discreto" title="Abrir o painel de gestão">
+            Painel
+          </Link>
+        </div>
       </header>
 
       {erro && <p className="op-aviso">{erro}</p>}

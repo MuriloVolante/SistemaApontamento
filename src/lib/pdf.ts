@@ -1,6 +1,7 @@
 import jsPDF from "jspdf";
 import { autoTable } from "jspdf-autotable";
 import type { CellHookData } from "jspdf-autotable";
+import { LOGOTIPO } from "./marca";
 import { formatarData, formatarDuracao, formatarHora } from "./tempo";
 import type { LinhaApontamento, LinhaSintetico, Totais } from "./tipos";
 
@@ -28,29 +29,78 @@ function alinharColunas(colunasDireita: number[]) {
   };
 }
 
-function cabecalho(doc: jsPDF, titulo: string, criterios: string[]): number {
+/** Logotipo pronto para o PDF: imagem PNG e a proporção do desenho. */
+interface Logotipo {
+  png: string;
+  proporcao: number;
+}
+
+/**
+ * O jsPDF não desenha SVG, então o logotipo é rasterizado num canvas, em
+ * resolução folgada para sair nítido na impressão. Se o navegador falhar
+ * nisso, o relatório sai sem a marca em vez de não sair.
+ */
+async function rasterizarLogotipo(): Promise<Logotipo | null> {
+  try {
+    const [, , w, h] = LOGOTIPO.viewBox.split(" ").map(Number);
+    const escala = 4;
+    const cor = `rgb(${GRAFITE.join(",")})`;
+    const svg =
+      `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${LOGOTIPO.viewBox}" ` +
+      `width="${w * escala}" height="${h * escala}" fill="${cor}">` +
+      LOGOTIPO.caminhos.map((d) => `<path fill-rule="evenodd" d="${d}"/>`).join("") +
+      `</svg>`;
+
+    const imagem = new Image();
+    imagem.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+    await imagem.decode();
+
+    const canvas = document.createElement("canvas");
+    canvas.width = w * escala;
+    canvas.height = h * escala;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    ctx.drawImage(imagem, 0, 0);
+    return { png: canvas.toDataURL("image/png"), proporcao: w / h };
+  } catch {
+    return null;
+  }
+}
+
+function cabecalho(
+  doc: jsPDF,
+  titulo: string,
+  criterios: string[],
+  logotipo: Logotipo | null
+): number {
   const largura = doc.internal.pageSize.getWidth();
   const emissao = new Date().toISOString();
+
+  doc.setProperties({ title: titulo, creator: "Mautus" });
 
   doc.setFontSize(15);
   doc.setFont("helvetica", "bold");
   doc.text(titulo, 14, 16);
 
-  doc.setFontSize(9);
-  doc.setFont("helvetica", "normal");
-  doc.text(
-    `Emitido em ${formatarData(emissao)} ${formatarHora(emissao)}`,
-    largura - 14,
-    16,
-    { align: "right" }
-  );
+  // A marca ocupa o canto direito da linha do título; a data de emissão desce
+  // para a primeira linha dos critérios, do lado oposto a eles.
+  if (logotipo) {
+    const altura = 8;
+    const comprimento = altura * logotipo.proporcao;
+    doc.addImage(logotipo.png, "PNG", largura - 14 - comprimento, 9.5, comprimento, altura);
+  }
 
   doc.setDrawColor(120);
   doc.setLineWidth(0.4);
-  doc.line(14, 19, largura - 14, 19);
+  doc.line(14, 19.5, largura - 14, 19.5);
+
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
+  doc.text(`Emitido em ${formatarData(emissao)} ${formatarHora(emissao)}`, largura - 14, 25, {
+    align: "right",
+  });
 
   let y = 25;
-  doc.setFontSize(9);
   for (const linha of criterios) {
     doc.text(linha, 14, y);
     y += 5;
@@ -103,14 +153,19 @@ function rodapePaginas(doc: jsPDF): void {
 }
 
 /** Relatório analítico: espelho exato da tabela filtrada. */
-export function gerarPdfAnalitico(
+export async function gerarPdfAnalitico(
   linhas: LinhaApontamento[],
   totais: Totais,
   criterios: string[]
-): void {
+): Promise<void> {
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
 
-  let y = cabecalho(doc, "Relatório Analítico de Apontamentos", criterios);
+  let y = cabecalho(
+    doc,
+    "Relatório Analítico de Apontamentos",
+    criterios,
+    await rasterizarLogotipo()
+  );
   y = faixaTotais(doc, y, totais);
 
   autoTable(doc, {
@@ -178,10 +233,18 @@ export function gerarPdfAnalitico(
  * Relatório sintético: por etapa, tempo total, em operação e pausado, com
  * linha de total consolidado.
  */
-export function gerarPdfSintetico(linhas: LinhaSintetico[], criterios: string[]): void {
+export async function gerarPdfSintetico(
+  linhas: LinhaSintetico[],
+  criterios: string[]
+): Promise<void> {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 
-  const y = cabecalho(doc, "Relatório Sintético por Etapa", criterios);
+  const y = cabecalho(
+    doc,
+    "Relatório Sintético por Etapa",
+    criterios,
+    await rasterizarLogotipo()
+  );
 
   const consolidado = linhas.reduce(
     (s, l) => ({
