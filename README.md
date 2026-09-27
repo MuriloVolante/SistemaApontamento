@@ -254,9 +254,12 @@ Os totais viram o dia à meia-noite, com a tela aberta.
 
 ### Histórico
 
-A tabela completa de apontamentos. Os filtros ficam numa **lateral fixa** que
-acompanha a rolagem: OS (busca parcial), Etapa e Data. Abaixo de 1080 px ela
-vira um painel recolhível no topo, com a contagem de filtros ativos.
+A tabela completa de apontamentos, na largura toda da tela. Os filtros (OS por
+busca parcial, Etapa e Data) ficam no botão **Filtros**, ao lado de **Gerar
+relatório**, e abrem numa janela suspensa que fecha ao clicar fora; o botão
+mostra quantos filtros estão ativos. Sem a lateral, as dez colunas cabem
+inteiras a partir de uns 1260 px de largura; abaixo disso a tabela rola dentro
+da própria moldura.
 
 A tela **abre filtrada no dia de hoje**; apagar a data mostra tudo. A busca por
 OS espera você parar de digitar antes de consultar.

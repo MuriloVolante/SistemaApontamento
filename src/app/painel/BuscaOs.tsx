@@ -79,17 +79,21 @@ export default function BuscaOs({
     setErro(null);
   }
 
+  // Etapa e Tipo (e a justificativa, na visão do gestor) ficam com a sobra
+  // da largura; número, datas, horas e duração encolhem até o tamanho do
+  // conteúdo e ficam juntos à direita. Repartidas por igual, a hora de
+  // início ficava longe da própria data e colada na data de fim.
   const colunas = [
-    { rotulo: "#", numerica: true },
+    { rotulo: "#", numerica: true, compacta: true },
     { rotulo: "Etapa" },
     { rotulo: "Tipo" },
-    { rotulo: "Data Início" },
-    { rotulo: "Hora Início", numerica: true },
-    { rotulo: "Data Fim" },
-    { rotulo: "Hora Fim", numerica: true },
+    { rotulo: "Data Início", compacta: true },
+    { rotulo: "Hora Início", numerica: true, compacta: true },
+    { rotulo: "Data Fim", compacta: true },
+    { rotulo: "Hora Fim", numerica: true, compacta: true },
     ...(consultaApenas
       ? []
-      : [{ rotulo: "Tempo Total", numerica: true }, { rotulo: "Justificativa" }]),
+      : [{ rotulo: "Tempo Total", numerica: true, compacta: true }, { rotulo: "Justificativa" }]),
   ];
 
   // A situação vem do fluxo ao vivo, então o cronômetro corre sem reconsultar.
@@ -193,7 +197,7 @@ export default function BuscaOs({
                   <thead>
                     <tr>
                       {colunas.map((c) => (
-                        <th key={c.rotulo}>
+                        <th key={c.rotulo} className={c.compacta ? "col-compacta" : undefined}>
                           {/* Cabeçalho de coluna numérica encosta à direita,
                               junto com o número: alinhamentos opostos na mesma
                               coluna é o que fazia a tabela parecer torta. */}
@@ -211,7 +215,7 @@ export default function BuscaOs({
                   <tbody>
                     {resultado.linhas.map((l) => (
                       <tr key={l.id}>
-                        <td className="col-num">{l.numero}</td>
+                        <td className="col-num col-compacta">{l.numero}</td>
                         <td>{l.etapa_nome}</td>
                         <td>
                           <span
@@ -222,13 +226,13 @@ export default function BuscaOs({
                             {l.tipo === "OPERACAO" ? "Operação" : "Pausa"}
                           </span>
                         </td>
-                        <td>{formatarData(l.inicio)}</td>
-                        <td className="col-num">{formatarHora(l.inicio)}</td>
-                        <td>{formatarData(l.fim)}</td>
-                        <td className="col-num">{formatarHora(l.fim)}</td>
+                        <td className="col-compacta">{formatarData(l.inicio)}</td>
+                        <td className="col-num col-compacta">{formatarHora(l.inicio)}</td>
+                        <td className="col-compacta">{formatarData(l.fim)}</td>
+                        <td className="col-num col-compacta">{formatarHora(l.fim)}</td>
                         {!consultaApenas && (
                           <>
-                            <td className="col-num">{formatarDuracao(l.duracao_segundos)}</td>
+                            <td className="col-num col-compacta">{formatarDuracao(l.duracao_segundos)}</td>
                             <td className="col-justificativa">{l.justificativa ?? ""}</td>
                           </>
                         )}

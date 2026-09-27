@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { listarEtapas } from "@/app/actions";
 import { consultarApontamentos } from "@/app/consultas";
 import CardsTotais from "@/app/painel/Totais";
@@ -107,6 +107,25 @@ export default function Historico() {
     const { deISO, ateISO } = limitesLocais(data || undefined, data || undefined);
     return { os, etapaId, deISO, ateISO };
   }, [os, etapaId, data]);
+
+  // A janela de filtros fecha ao clicar fora dela ou apertar Esc, como toda
+  // janela suspensa. No celular os filtros são um painel próprio, que já faz isso.
+  const ancoraFiltros = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!filtrosAbertos || emCartoes) return;
+    const aoTocarFora = (e: PointerEvent) => {
+      if (!ancoraFiltros.current?.contains(e.target as Node)) setFiltrosAbertos(false);
+    };
+    const aoTeclar = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setFiltrosAbertos(false);
+    };
+    document.addEventListener("pointerdown", aoTocarFora);
+    document.addEventListener("keydown", aoTeclar);
+    return () => {
+      document.removeEventListener("pointerdown", aoTocarFora);
+      document.removeEventListener("keydown", aoTeclar);
+    };
+  }, [filtrosAbertos, emCartoes]);
 
   useEffect(() => {
     const espera = window.setTimeout(() => setOs(osDigitada), 300);
@@ -255,16 +274,62 @@ export default function Historico() {
     <>
       <div className="painel-topo">
         <h1 className="painel-titulo">Histórico</h1>
-        <button
-          type="button"
-          className="botao botao--neutro filtros-alternar"
-          aria-expanded={filtrosAbertos}
-          onClick={() => setFiltrosAbertos((a) => !a)}
-        >
-          <Icone nome="filtro" tamanho={16} />
-          Filtros
-          {filtrosAtivos > 0 && <span className="filtros-contador">{filtrosAtivos}</span>}
-        </button>
+
+        {emCartoes ? (
+          <button
+            type="button"
+            className="botao botao--neutro"
+            aria-expanded={filtrosAbertos}
+            onClick={() => setFiltrosAbertos((a) => !a)}
+          >
+            <Icone nome="filtro" tamanho={16} />
+            Filtros
+            {filtrosAtivos > 0 && <span className="filtros-contador">{filtrosAtivos}</span>}
+          </button>
+        ) : (
+          <div className="historico-acoes">
+            {/* Os filtros saíram da lateral e viraram janela suspensa: a
+                lateral comia 268 px, e sem eles a tabela cabe inteira. */}
+            <div className="filtros-ancora" ref={ancoraFiltros}>
+              <button
+                type="button"
+                className="botao botao--neutro"
+                aria-expanded={filtrosAbertos}
+                aria-haspopup="dialog"
+                onClick={() => setFiltrosAbertos((a) => !a)}
+              >
+                <Icone nome="filtro" tamanho={16} />
+                Filtros
+                {filtrosAtivos > 0 && <span className="filtros-contador">{filtrosAtivos}</span>}
+              </button>
+
+              {filtrosAbertos && (
+                <div className="filtros-suspensa" role="dialog" aria-label="Filtros">
+                  {campos}
+                  <p className="filtros-dica">O tipo é escolhido clicando nos cards de tempo.</p>
+                  <div className="filtros-acoes">
+                    <button
+                      type="button"
+                      className="botao botao--neutro"
+                      onClick={limparFiltros}
+                      disabled={filtrosAtivos === 0}
+                    >
+                      Limpar
+                    </button>
+                    <button type="button" className="botao" onClick={() => setFiltrosAbertos(false)}>
+                      Fechar
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <button type="button" className="botao" onClick={() => setRelatorioAberto(true)}>
+              <Icone nome="relatorio" tamanho={16} />
+              Gerar relatório
+            </button>
+          </div>
+        )}
       </div>
 
       {erro && <p className="erro">{erro}</p>}
@@ -304,32 +369,8 @@ export default function Historico() {
           )}
         </>
       ) : (
-        /* ---- tela larga: filtros na lateral e a tabela completa ---- */
+        /* ---- tela larga: a tabela completa, na largura toda ---- */
         <div className="historico">
-          <aside className={`filtros-lateral ${filtrosAbertos ? "filtros-lateral--aberta" : ""}`}>
-            <div className="cartao filtros-caixa">
-              <h2 className="cartao-titulo">Filtros</h2>
-              {campos}
-
-              <p className="filtros-dica">O tipo é escolhido clicando nos cards de tempo.</p>
-
-              <div className="filtros-acoes">
-                <button
-                  type="button"
-                  className="botao botao--neutro"
-                  onClick={limparFiltros}
-                  disabled={filtrosAtivos === 0}
-                >
-                  Limpar
-                </button>
-                <button type="button" className="botao" onClick={() => setRelatorioAberto(true)}>
-                  <Icone nome="relatorio" tamanho={16} />
-                  Gerar relatório
-                </button>
-              </div>
-            </div>
-          </aside>
-
           <div className="historico-conteudo">
             <CardsTotais
               totais={totais}

@@ -1195,6 +1195,12 @@ table.tabela tbody tr:last-child td {
   border-bottom: none;
 }
 
+/* Coluna do tamanho do conteúdo: a sobra da largura vai para as outras. */
+.col-compacta {
+  width: 1%;
+  white-space: nowrap;
+}
+
 .col-num {
   font-family: var(--fonte-numero-pilha);
   font-variant-numeric: tabular-nums;
@@ -1689,21 +1695,41 @@ table.tabela tbody tr:last-child td {
    Histórico: filtros na lateral
    --------------------------------------------------------------------- */
 
+/* `minmax(0, 1fr)`, e não a coluna automática da grade: a automática cresce
+   até a largura mínima da tabela e empurra a página inteira para os lados.
+   Assim a tabela nunca passa da página; quando de fato não cabe, rola dentro
+   da própria moldura. */
 .historico {
   display: grid;
-  grid-template-columns: 268px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: clamp(12px, 1.6vw, 18px);
-  align-items: start;
 }
 
 /* Acompanha a rolagem: a tabela é longa, os filtros continuam à mão. */
-.filtros-lateral {
-  position: sticky;
-  top: calc(52px + var(--respiro));
+.historico-acoes {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
-.filtros-caixa {
-  margin-bottom: 0;
+.filtros-ancora {
+  position: relative;
+}
+
+/* Janela suspensa dos filtros: desce do botão, por cima dos cards, sem
+   empurrar a tabela. Os filtros valem na hora, enquanto ela está aberta. */
+.filtros-suspensa {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 30;
+  width: min(340px, calc(100vw - 32px));
+  padding: 16px;
+  background: var(--superficie);
+  border: 1px solid var(--borda-media);
+  border-radius: var(--raio-g);
+  box-shadow: var(--sombra-m);
+  animation: surgir 160ms var(--saida-suave) both;
 }
 
 .filtros-campos {
@@ -1722,13 +1748,9 @@ table.tabela tbody tr:last-child td {
 
 .filtros-acoes {
   display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 8px;
   margin-top: 14px;
-}
-
-/* Só aparece quando os filtros viram painel recolhível. */
-.filtros-alternar {
-  display: none;
 }
 
 .filtros-contador {
@@ -2507,36 +2529,6 @@ table.tabela tbody tr:last-child td {
 /* ---------------------------------------------------------------------
    Telas estreitas
    --------------------------------------------------------------------- */
-
-/* Abaixo disto a lateral de filtros vira painel recolhível no topo. */
-@media (max-width: 1080px) {
-  .historico {
-    grid-template-columns: 1fr;
-  }
-
-  .filtros-lateral {
-    position: static;
-    display: none;
-  }
-
-  .filtros-lateral--aberta {
-    display: block;
-    animation: surgir 200ms var(--saida-suave) both;
-  }
-
-  .filtros-alternar {
-    display: inline-flex;
-  }
-
-  .filtros-campos {
-    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-  }
-
-  .filtros-acoes {
-    grid-auto-flow: column;
-    justify-content: start;
-  }
-}
 
 @media (max-width: 760px) {
   /* Espaço no rodapé para o botão flutuante não cobrir conteúdo. */
