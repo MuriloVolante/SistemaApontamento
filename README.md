@@ -242,7 +242,7 @@ o histórico daquela OS.
 Sem busca ativa, o dashboard mostra o que está acontecendo agora:
 
 - os três cards, Tempo Total, Tempo em Operação e Tempo em Pausa, com os
-  totais **do dia de hoje**, contando também o tempo que está correndo agora
+  totais **de todas as datas**, contando também o tempo que está correndo agora
   (uma máquina rodando desde as 7h sem parar já aparece nos totais);
 - um card por **OS em andamento**, com o número da OS, a etapa, o cronômetro
   do estado atual e, quando pausada, o motivo da parada.
@@ -269,7 +269,7 @@ mostra quantos filtros estão ativos. Sem a lateral, as dez colunas cabem
 inteiras a partir de uns 1260 px de largura; abaixo disso a tabela rola dentro
 da própria moldura.
 
-A tela **abre filtrada no dia de hoje**; apagar a data mostra tudo. A busca por
+A tela **abre com todas as datas**; escolher uma data recorta aquele dia. A busca por
 OS espera você parar de digitar antes de consultar.
 
 A coluna **`#` é o identificador do registro**: um sequencial por ordem de
@@ -371,7 +371,7 @@ para apertar Iniciar no meio do turno. O login existe só para o painel.
 
 A tela do vendedor é a mesma rota do dashboard, montada de outro jeito: barra
 de busca, o cartão da situação da OS e as etapas por onde ela passou. Sem
-totais do dia, sem cronômetro e sem a coluna de duração, porque o acesso dele é
+totais, sem cronômetro e sem a coluna de duração, porque o acesso dele é
 para responder ao cliente que ligou, não para medir produção.
 
 ### Primeiro acesso

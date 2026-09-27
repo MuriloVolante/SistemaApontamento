@@ -7,13 +7,7 @@ import CardsTotais from "./Totais";
 import { useUsuario } from "./ContextoUsuario";
 import BuscaOs from "./BuscaOs";
 import Icone from "@/components/Icone";
-import {
-  dataLocalISO,
-  diferencaEmSegundos,
-  formatarDuracao,
-  formatarHora,
-  limitesLocais,
-} from "@/lib/tempo";
+import { diferencaEmSegundos, formatarDuracao, formatarHora } from "@/lib/tempo";
 import type { AtualizacaoAoVivo, SessaoAtiva, Totais } from "@/lib/tipos";
 
 const TOTAIS_ZERADOS: Totais = { total: 0, operacao: 0, pausa: 0 };
@@ -62,14 +56,12 @@ interface Base {
  * Soma aos totais fechados o segmento que está em aberto agora.
  *
  * Sem isso, uma máquina rodando desde as 7h sem pausar aparecia com zero até
- * a primeira parada. Entra só o segmento que começou hoje: é pelo dia de
- * início que o apontamento conta quando for gravado, e somá-lo aqui a outro
- * dia faria o total pular na hora de gravar.
+ * a primeira parada. Os totais cobrem todas as datas, então todo segmento em
+ * aberto entra, seja de quando for.
  */
-function somarEmAberto(base: Base, inicioDoDia: number, agora: Date): Totais {
+function somarEmAberto(base: Base, agora: Date): Totais {
   const t = { ...base.totais };
   for (const s of base.sessoes) {
-    if (new Date(s.segmento_inicio).getTime() < inicioDoDia) continue;
     const segundos = diferencaEmSegundos(s.segmento_inicio, agora);
     t.total += segundos;
     if (s.status === "EM_ANDAMENTO") t.operacao += segundos;
@@ -80,7 +72,7 @@ function somarEmAberto(base: Base, inicioDoDia: number, agora: Date): Totais {
 
 export default function Dashboard() {
   // O vendedor entra aqui para uma coisa só: saber onde está a OS do cliente.
-  // Nada de totais do dia nem de cronômetros, só a busca e o que ela responde.
+  // Nada de totais nem de cronômetros, só a busca e o que ela responde.
   const consultaApenas = useUsuario().tipo === "VENDEDOR";
 
   const [sessoes, setSessoes] = useState<SessaoAtiva[]>([]);
@@ -99,17 +91,9 @@ export default function Dashboard() {
   const [revisao, setRevisao] = useState<number | null>(null);
   const [buscaAtiva, setBuscaAtiva] = useState(false);
 
-  // O dia de hoje muda à meia-noite com a tela aberta. Fica numa ref para as
-  // funções lerem sempre o valor atual sem precisarem ser recriadas: se o
-  // fluxo de eventos dependesse dele, a virada do dia derrubaria a conexão.
-  const hoje = dataLocalISO(new Date().toISOString());
-  const hojeRef = useRef(hoje);
-  hojeRef.current = hoje;
-
   /**
-   * Recalcula os totais do dia e os guarda junto com as sessões que valiam
-   * naquele momento. O recorte usa o fuso do navegador, por isso fica aqui e
-   * não no servidor.
+   * Recalcula os totais de todas as datas e os guarda junto com as sessões
+   * que valiam naquele momento.
    *
    * Trocar os dois juntos é o que impede o total de "descer" por um instante:
    * quando uma pausa é gravada, as sessões novas chegam antes dos totais
@@ -119,8 +103,7 @@ export default function Dashboard() {
   const carregarTotais = useCallback(
     async (sessoesDoMomento: SessaoAtiva[]) => {
       if (consultaApenas) return;
-      const { deISO, ateISO } = limitesLocais(hojeRef.current, hojeRef.current);
-      const totais = await totaisDoPeriodo(deISO, ateISO);
+      const totais = await totaisDoPeriodo();
       setBase({ totais, sessoes: sessoesDoMomento });
     },
     [consultaApenas]
@@ -147,17 +130,6 @@ export default function Dashboard() {
     },
     [carregarTotais]
   );
-
-  // Virada do dia: os totais de ontem não servem mais, mesmo sem apontamento
-  // novo que dispare a reconsulta.
-  const sessoesRef = useRef(sessoes);
-  sessoesRef.current = sessoes;
-  useEffect(() => {
-    if (revisaoCarregada.current === null) return; // a primeira carga já vem do fluxo
-    carregarTotais(sessoesRef.current).catch(() => {
-      /* a próxima revisão tenta de novo */
-    });
-  }, [hoje, carregarTotais]);
 
   // ---- fluxo de eventos do servidor --------------------------------------
 
@@ -255,8 +227,7 @@ export default function Dashboard() {
 
   const agoraCorrigido = () => new Date(Date.now() + desvioRelogio.current);
 
-  const inicioDoDia = new Date(limitesLocais(hoje, hoje).deISO!).getTime();
-  const totais = somarEmAberto(base, inicioDoDia, agoraCorrigido());
+  const totais = somarEmAberto(base, agoraCorrigido());
 
   return (
     <>
@@ -279,7 +250,7 @@ export default function Dashboard() {
 
       {erro && <p className="erro">{erro}</p>}
 
-      {/* Durante a busca o painel do dia sai de cena para não competir. */}
+      {/* Durante a busca o painel sai de cena para não competir. */}
       {!buscaAtiva && !consultaApenas && (
         <>
           <CardsTotais totais={totais} />

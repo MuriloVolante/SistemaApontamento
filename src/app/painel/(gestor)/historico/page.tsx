@@ -71,9 +71,8 @@ export default function Historico() {
   const [osDigitada, setOsDigitada] = useState("");
   const [os, setOs] = useState("");
   const [etapaId, setEtapaId] = useState("");
-  // Abre no dia de hoje: sem data, a primeira consulta trazia a tabela inteira,
-  // e ela só cresce. Apagar a data mostra tudo, como antes.
-  const [data, setData] = useState(() => dataLocalISO(new Date().toISOString()));
+  // Abre com todas as datas; escolher uma data recorta aquele dia.
+  const [data, setData] = useState("");
   // O tipo não tem campo próprio: quem controla são os cards de total.
   const [recorte, setRecorte] = useState<Recorte>(null);
 
