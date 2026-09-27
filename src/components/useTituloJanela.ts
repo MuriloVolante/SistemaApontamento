@@ -14,7 +14,9 @@ const PADRAO = "Sistema de Apontamento";
  *
  * O observador existe porque o Next reaplica o `<title>` do layout sempre que
  * uma ação de servidor faz a rota se revalidar: sem ele, iniciar ou finalizar
- * um apontamento devolvia a aba ao nome genérico. Escrever de novo só quando o
+ * um apontamento devolvia a aba ao nome genérico. Ele olha o `<head>` inteiro,
+ * e não um elemento só: desde o React 19 o `<title>` é trocado por outro, e um
+ * observador preso ao antigo não via mais nada. Escrever de novo só quando o
  * valor difere evita que a nossa própria alteração acorde o observador em laço.
  *
  * Sem limpeza ao desmontar de propósito: todas as telas chamam este hook, e a
@@ -30,11 +32,8 @@ export default function useTituloJanela(titulo: string | null | undefined): void
     };
     aplicar();
 
-    const alvo = document.querySelector("title");
-    if (!alvo) return;
-
     const observador = new MutationObserver(aplicar);
-    observador.observe(alvo, { childList: true, characterData: true, subtree: true });
+    observador.observe(document.head, { childList: true, characterData: true, subtree: true });
     return () => observador.disconnect();
   }, [titulo]);
 }

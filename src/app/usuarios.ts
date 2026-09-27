@@ -1,25 +1,37 @@
 "use server";
 
+import { falhaInesperada } from "@/lib/erros";
+import { LIMITES } from "@/lib/nomes";
 import { ErroUnicidade, repositorio } from "@/lib/repositorio";
 import { embaralhar, SENHA_PADRAO } from "@/lib/senha";
-import { exigirGestor, lerSessao } from "@/lib/sessao";
+import { exigirGestor } from "@/lib/sessao";
 import type { Resultado, TipoAcesso, Usuario } from "@/lib/tipos";
 
 /**
- * Gestão de usuários do painel. Toda ação daqui exige ser gestor, e a conferência
- * é do servidor, não da tela: esconder um botão não protege nada, porque a
- * ação continuaria alcançável por quem soubesse chamá-la.
+ * Gestão de usuários do painel. Toda ação daqui exige ser gestor, e a
+ * conferência é do servidor, não da tela: esconder um botão não protege nada,
+ * porque a ação continuaria alcançável por quem soubesse chamá-la.
  */
 export async function listarUsuarios(): Promise<Usuario[]> {
   await exigirGestor();
   return (await repositorio()).listarUsuarios();
 }
 
+/** Nome limpo, ou a mensagem que explica por que não serve. */
+function criticarNome(nome: string): { nome: string } | { erro: string } {
+  const limpo = nome.trim();
+  if (!limpo) return { erro: "Informe o nome do usuário." };
+  if (limpo.length > LIMITES.nome) {
+    return { erro: `O nome pode ter no máximo ${LIMITES.nome} caracteres.` };
+  }
+  return { nome: limpo };
+}
+
 export async function criarUsuario(nome: string, tipo: TipoAcesso): Promise<Resultado<Usuario>> {
   await exigirGestor();
 
-  const limpo = nome.trim();
-  if (!limpo) return { ok: false, erro: "Informe o nome do usuário." };
+  const critica = criticarNome(nome);
+  if ("erro" in critica) return { ok: false, erro: critica.erro };
   if (tipo !== "GESTOR" && tipo !== "VENDEDOR") {
     return { ok: false, erro: "Escolha o tipo de acesso." };
   }
@@ -27,26 +39,30 @@ export async function criarUsuario(nome: string, tipo: TipoAcesso): Promise<Resu
   try {
     // Nasce com a senha padrão e a troca pendente: a senha de verdade é
     // definida pela própria pessoa, no primeiro login.
-    const usuario = await (await repositorio()).criarUsuario(limpo, tipo, embaralhar(SENHA_PADRAO));
+    const usuario = await (await repositorio()).criarUsuario(
+      critica.nome,
+      tipo,
+      await embaralhar(SENHA_PADRAO)
+    );
     return { ok: true, dados: usuario };
   } catch (e) {
     if (e instanceof ErroUnicidade) return { ok: false, erro: "Já existe um usuário com esse nome." };
-    return { ok: false, erro: (e as Error).message };
+    return falhaInesperada("criarUsuario", e);
   }
 }
 
 export async function renomearUsuario(id: string, nome: string): Promise<Resultado> {
   await exigirGestor();
 
-  const limpo = nome.trim();
-  if (!limpo) return { ok: false, erro: "Informe o nome do usuário." };
+  const critica = criticarNome(nome);
+  if ("erro" in critica) return { ok: false, erro: critica.erro };
 
   try {
-    await (await repositorio()).renomearUsuario(id, limpo);
+    await (await repositorio()).renomearUsuario(id, critica.nome);
     return { ok: true, dados: null };
   } catch (e) {
     if (e instanceof ErroUnicidade) return { ok: false, erro: "Já existe um usuário com esse nome." };
-    return { ok: false, erro: (e as Error).message };
+    return falhaInesperada("renomearUsuario", e);
   }
 }
 
@@ -67,7 +83,7 @@ export async function definirTipoUsuario(id: string, tipo: TipoAcesso): Promise<
     await (await repositorio()).definirTipoUsuario(id, tipo);
     return { ok: true, dados: null };
   } catch (e) {
-    return { ok: false, erro: (e as Error).message };
+    return falhaInesperada("definirTipoUsuario", e);
   }
 }
 
@@ -86,19 +102,22 @@ export async function definirAtivoUsuario(id: string, ativo: boolean): Promise<R
     await (await repositorio()).definirAtivoUsuario(id, ativo);
     return { ok: true, dados: null };
   } catch (e) {
-    return { ok: false, erro: (e as Error).message };
+    return falhaInesperada("definirAtivoUsuario", e);
   }
 }
 
-/** Devolve a senha padrão à pessoa e reativa a troca obrigatória. */
-export async function resetarSenhaUsuario(id: string): Promise<Resultado<{ senha: string }>> {
+/**
+ * Devolve a senha padrão à pessoa e religa a troca obrigatória. Toda sessão
+ * aberta dela cai na hora: a `versao_sessao` muda junto com a senha.
+ */
+export async function resetarSenhaUsuario(id: string): Promise<Resultado> {
   await exigirGestor();
 
   try {
-    await (await repositorio()).definirSenhaUsuario(id, embaralhar(SENHA_PADRAO), true);
-    return { ok: true, dados: { senha: SENHA_PADRAO } };
+    await (await repositorio()).definirSenhaUsuario(id, await embaralhar(SENHA_PADRAO), true);
+    return { ok: true, dados: null };
   } catch (e) {
-    return { ok: false, erro: (e as Error).message };
+    return falhaInesperada("resetarSenhaUsuario", e);
   }
 }
 
@@ -114,7 +133,7 @@ export async function excluirUsuario(id: string): Promise<Resultado> {
     await (await repositorio()).excluirUsuario(id);
     return { ok: true, dados: null };
   } catch (e) {
-    return { ok: false, erro: (e as Error).message };
+    return falhaInesperada("excluirUsuario", e);
   }
 }
 
@@ -130,9 +149,4 @@ async function semOutroGestorAtivo(id: string): Promise<boolean> {
   if (!alvo || alvo.tipo !== "GESTOR" || !alvo.ativo) return false;
 
   return !usuarios.some((u) => u.id !== id && u.tipo === "GESTOR" && u.ativo);
-}
-
-/** Usado pela tela para marcar a própria linha e esconder ações sem sentido. */
-export async function meuId(): Promise<string | null> {
-  return (await lerSessao())?.id ?? null;
 }

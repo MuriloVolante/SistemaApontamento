@@ -12,6 +12,9 @@ create extension if not exists "pgcrypto";
 create table if not exists etapas (
   id uuid primary key default gen_random_uuid(),
   nome text not null unique,
+  -- Nome normalizado pela aplicacao (NFC, minusculas em pt-BR): e ele que
+  -- garante que "Corte" e "corte" nao sejam duas etapas.
+  nome_chave text,
   ativa boolean not null default true
 );
 
@@ -29,8 +32,8 @@ create table if not exists apontamentos (
 );
 
 -- Apontamento em curso de cada etapa. Uma linha por etapa, removida ao
--- finalizar. Fonte de verdade do tempo decorrido: o cronômetro é sempre
--- recalculado por diferença de timestamps a partir de segmento_inicio,
+-- finalizar. Fonte de verdade do tempo decorrido: o cronometro e sempre
+-- recalculado por diferenca de timestamps a partir de segmento_inicio,
 -- de modo que o tempo corre na nuvem mesmo com o navegador fechado.
 create table if not exists sessoes (
   etapa_id uuid primary key references etapas(id),
@@ -40,12 +43,37 @@ create table if not exists sessoes (
   motivo text
 );
 
-create index if not exists apontamentos_numero_os_idx on apontamentos (numero_os);
-create index if not exists apontamentos_inicio_idx on apontamentos (inicio);
-create index if not exists apontamentos_numero_idx on apontamentos (numero);
+-- Usuarios do painel. A tela de apontamento nao tem login (regra 7); estes
+-- perfis valem so para o painel de gestao: GESTOR faz tudo, VENDEDOR so
+-- consulta OS, para saber onde esta o material do cliente.
+create table if not exists usuarios (
+  id             uuid primary key default gen_random_uuid(),
+  nome           text not null,
+  -- Mesma normalizacao das etapas: "Joao" e "JOAO" sao a mesma pessoa.
+  nome_chave     text,
+  tipo           text not null check (tipo in ('GESTOR','VENDEDOR')),
+  ativo          boolean not null default true,
+  senha_hash     text not null,
+  primeiro_login boolean not null default true,
+  -- Muda a cada troca de senha, reset e inativacao; o cookie guarda o valor
+  -- da hora do login, e quando nao bate mais a sessao foi revogada.
+  versao_sessao  integer not null default 0
+);
 
--- Para bancos criados antes da coluna `numero`: adiciona e numera em ordem
--- cronologica. Em banco novo nao faz nada.
+-- Configuracao do proprio sistema: hoje so a chave que assina os cookies de
+-- sessao. Fica no banco para o sistema subir sem configuracao nenhuma e para
+-- ninguem cair ao reiniciar o servidor.
+create table if not exists configuracao (
+  chave text primary key,
+  valor text not null
+);
+
+-- ---------------------------------------------------------------------
+-- Migracao de bancos criados por versoes anteriores deste arquivo
+-- ---------------------------------------------------------------------
+
+-- Cada passo confere antes de agir: em banco novo, nada acontece. Os indices
+-- vem depois, porque um banco antigo ainda nao tem as colunas que eles usam.
 do $$
 begin
   if not exists (
@@ -60,31 +88,57 @@ begin
   end if;
 end $$;
 
--- Usuarios do painel. A tela de apontamento nao tem login (regra 1); estes
--- perfis valem so para o painel de gestao: GESTOR ve tudo, VENDEDOR ve apenas
--- o dashboard, para saber onde esta o material do cliente.
---
--- `citext` nao esta ligado por padrao, entao a unicidade sem diferenciar
--- maiusculas sai de um indice sobre lower(nome): cadastrar "Joao" e depois
--- "joao" seria criar dois acessos para a mesma pessoa.
-create table if not exists usuarios (
-  id             uuid primary key default gen_random_uuid(),
-  nome           text not null,
-  tipo           text not null check (tipo in ('GESTOR','VENDEDOR')),
-  ativo          boolean not null default true,
-  senha_hash     text not null,
-  primeiro_login boolean not null default true
-);
+alter table etapas   add column if not exists nome_chave text;
+alter table usuarios add column if not exists nome_chave text;
+alter table usuarios add column if not exists versao_sessao integer not null default 0;
 
-create unique index if not exists usuarios_nome_idx on usuarios (lower(nome));
+-- Preenchimento aproximado das linhas antigas. Daqui em diante a aplicacao
+-- grava a chave com a regra exata de src/lib/nomes.ts.
+update etapas   set nome_chave = lower(normalize(nome, NFC)) where nome_chave is null;
+update usuarios set nome_chave = lower(normalize(nome, NFC)) where nome_chave is null;
 
--- Configuracao do proprio sistema: hoje so a chave que assina os cookies de
--- sessao. Fica no banco para o sistema subir sem configuracao nenhuma e para
--- ninguem cair ao reiniciar o servidor.
-create table if not exists configuracao (
-  chave text primary key,
-  valor text not null
-);
+-- ---------------------------------------------------------------------
+-- Indices
+-- ---------------------------------------------------------------------
+
+create index if not exists apontamentos_numero_os_idx on apontamentos (numero_os);
+create index if not exists apontamentos_inicio_idx on apontamentos (inicio);
+-- Contagem por etapa, filtros e o aviso de OS repetida na mesma etapa.
+create index if not exists apontamentos_etapa_idx on apontamentos (etapa_id, numero_os);
+
+-- O "#" passa a ser unico: dois registros com o mesmo numero seriam
+-- impossiveis de distinguir na tabela.
+drop index if exists apontamentos_numero_idx;
+create unique index if not exists apontamentos_numero_unico on apontamentos (numero);
+
+drop index if exists usuarios_nome_idx;
+create unique index if not exists etapas_nome_chave_unico on etapas (nome_chave);
+create unique index if not exists usuarios_nome_chave_unico on usuarios (nome_chave);
+
+-- ---------------------------------------------------------------------
+-- Revogacao de sessoes
+-- ---------------------------------------------------------------------
+
+-- A API REST nao sabe escrever `versao_sessao = versao_sessao + 1`, e ler
+-- para depois gravar deixaria duas revogacoes simultaneas valerem por uma.
+-- O gatilho faz o incremento dentro do proprio update: trocar a senha ou
+-- mudar o `ativo` derruba toda sessao aberta daquele usuario.
+create or replace function usuarios_revogar_sessoes() returns trigger
+language plpgsql
+as $fn$
+begin
+  if new.senha_hash is distinct from old.senha_hash
+     or new.ativo is distinct from old.ativo then
+    new.versao_sessao := old.versao_sessao + 1;
+  end if;
+  return new;
+end
+$fn$;
+
+drop trigger if exists usuarios_revogar_sessoes on usuarios;
+create trigger usuarios_revogar_sessoes
+  before update on usuarios
+  for each row execute function usuarios_revogar_sessoes();
 
 -- ---------------------------------------------------------------------
 -- Avanco de segmento: as duas escritas numa transacao so
@@ -92,7 +146,7 @@ create table if not exists configuracao (
 
 -- Fechar o segmento aberto e abrir o seguinte sao duas escritas que precisam
 -- valer juntas. Em duas chamadas separadas, uma queda de rede no meio deixaria
--- o apontamento gravado e a sessao no estado antigo -- e dois cliques no mesmo
+-- o apontamento gravado e a sessao no estado antigo, e dois cliques no mesmo
 -- botao gravariam o mesmo segmento duas vezes. Aqui a linha da sessao e travada
 -- (`for update`): o segundo clique espera, entra, encontra o status ja mudado e
 -- devolve false sem escrever nada.
@@ -152,13 +206,14 @@ $fn$;
 -- Acesso: somente pelo servidor
 -- ---------------------------------------------------------------------
 
--- O sistema nao tem login (regra 1), e por isso mesmo o banco nao pode ficar
+-- A tela de apontamento nao tem login (regra 7), e o login do painel e da
+-- propria aplicacao, nao do Supabase. Por isso mesmo o banco nao pode ficar
 -- aberto ao papel anonimo: a chave publicavel de um projeto Supabase viaja no
 -- navegador de qualquer visitante, e com RLS liberada ela daria acesso de
 -- leitura, escrita e exclusao direto pela API REST.
 --
 -- Todo o acesso passa pelas Server Actions, no servidor, com a chave
--- `service_role` -- que nunca chega ao navegador e ignora RLS por natureza.
+-- `service_role`, que nunca chega ao navegador e ignora RLS por natureza.
 -- Entao: RLS ligada e nenhuma politica. Sem politica, anon e authenticated nao
 -- leem nem gravam nada; o servidor continua com acesso total.
 alter table etapas       enable row level security;
@@ -178,40 +233,44 @@ revoke all on etapas, apontamentos, sessoes, usuarios, configuracao
   from anon, authenticated;
 revoke execute on function avancar_segmento(uuid, text, timestamptz, text, text)
   from public, anon, authenticated;
+revoke execute on function usuarios_revogar_sessoes()
+  from public, anon, authenticated;
 
 -- ---------------------------------------------------------------------
 -- Cadastro inicial de etapas: as máquinas e os setores da gráfica
 -- ---------------------------------------------------------------------
 
-insert into etapas (nome) values
-  ('GOSS'),
-  ('Komori'),
-  ('SM'),
-  ('KBA'),
-  ('Dobradeira MBO'),
-  ('Dobradeira AR'),
-  ('Laminacao'),
-  ('Corte/Vinco Automatico'),
-  ('Corte/Vinco Manual'),
-  ('Alceadeira 10 gavetas'),
-  ('Alceadeira 5 gavetas'),
-  ('Alceadeira Torre'),
-  ('Guilhotina 115 Tiger'),
-  ('Guilhotina 115 [revisar]'),
-  ('Guilhotina [revisar]'),
-  ('Verniz Localizado'),
-  ('Grampeador Miruna'),
-  ('Desfoleadeira'),
-  ('Maquina de aplicar vareta'),
-  ('Cartucheira'),
-  ('Maquina de copo 01'),
-  ('Maquina de copo 02'),
-  ('Maquina de copo 03'),
-  ('Maquina de copo 04'),
-  ('Maquina de balde 5L'),
-  ('Coladeira PUR'),
-  ('Shirincadeira Autoamtica'),
-  ('Shirincadeira manual'),
-  ('Expedicao'),
-  ('Ricoh')
+-- Espelho de src/lib/etapas-iniciais.ts, que e a fonte unica. Ao mudar a
+-- lista la, gere este bloco de novo em vez de editar a mao.
+insert into etapas (nome, nome_chave) values
+  ('GOSS', 'goss'),
+  ('Komori', 'komori'),
+  ('SM', 'sm'),
+  ('KBA', 'kba'),
+  ('Dobradeira MBO', 'dobradeira mbo'),
+  ('Dobradeira AR', 'dobradeira ar'),
+  ('Laminação', 'laminação'),
+  ('Corte/Vinco Automático', 'corte/vinco automático'),
+  ('Corte/Vinco Manual', 'corte/vinco manual'),
+  ('Alceadeira 10 gavetas', 'alceadeira 10 gavetas'),
+  ('Alceadeira 5 gavetas', 'alceadeira 5 gavetas'),
+  ('Alceadeira Torre', 'alceadeira torre'),
+  ('Guilhotina 115 Tiger', 'guilhotina 115 tiger'),
+  ('Guilhotina 115 [revisar]', 'guilhotina 115 [revisar]'),
+  ('Guilhotina [revisar]', 'guilhotina [revisar]'),
+  ('Verniz Localizado', 'verniz localizado'),
+  ('Grampeador Miruna', 'grampeador miruna'),
+  ('Desfoleadeira', 'desfoleadeira'),
+  ('Máquina de aplicar vareta', 'máquina de aplicar vareta'),
+  ('Cartucheira', 'cartucheira'),
+  ('Máquina de copo 01', 'máquina de copo 01'),
+  ('Máquina de copo 02', 'máquina de copo 02'),
+  ('Máquina de copo 03', 'máquina de copo 03'),
+  ('Máquina de copo 04', 'máquina de copo 04'),
+  ('Máquina de balde 5L', 'máquina de balde 5l'),
+  ('Coladeira PUR', 'coladeira pur'),
+  ('Shirincadeira Automática', 'shirincadeira automática'),
+  ('Shirincadeira manual', 'shirincadeira manual'),
+  ('Expedição', 'expedição'),
+  ('Ricoh', 'ricoh')
 on conflict (nome) do nothing;

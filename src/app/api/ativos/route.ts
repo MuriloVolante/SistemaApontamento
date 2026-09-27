@@ -1,5 +1,5 @@
 import { assinar } from "@/lib/transmissor";
-import { lerSessao } from "@/lib/sessao";
+import { validarSessao } from "@/lib/sessao";
 
 /** Fluxo aberto: precisa rodar em Node, sem cache e sem pré-renderização. */
 export const runtime = "nodejs";
@@ -15,38 +15,30 @@ const INTERVALO_BATIMENTO = 25_000;
  */
 export async function GET(requisicao: Request): Promise<Response> {
   // O fluxo carrega o que está rodando em todas as máquinas: é dado do
-  // painel, e painel exige sessão. Sem ela, nem abre.
-  const sessao = await lerSessao();
-  if (!sessao || sessao.trocar) {
+  // painel, e painel exige sessão conferida no banco. Um usuário inativado ou
+  // com a senha resetada deixa de receber já na próxima reconexão.
+  if (!(await validarSessao())) {
     return new Response("Sem sessão.", { status: 401 });
   }
 
   const codificador = new TextEncoder();
 
+  // Fora do `start` para o `cancel` também alcançar: o fluxo precisa ser
+  // desmontado por qualquer um dos três caminhos, senão a assinatura e o
+  // relógio ficam vivos para sempre, lendo o banco para ninguém.
+  let encerrar = () => {};
+
   const fluxo = new ReadableStream<Uint8Array>({
     start(controlador) {
       let aberto = true;
+      let batimento: ReturnType<typeof setInterval> | null = null;
+      let cancelarAssinatura: (() => void) | null = null;
 
-      const enviar = (texto: string) => {
-        if (!aberto) return;
-        try {
-          controlador.enqueue(codificador.encode(texto));
-        } catch {
-          aberto = false;
-        }
-      };
-
-      const cancelarAssinatura = assinar((dados) => {
-        enviar(`data: ${JSON.stringify(dados)}\n\n`);
-      });
-
-      const batimento = setInterval(() => enviar(": batimento\n\n"), INTERVALO_BATIMENTO);
-
-      const encerrar = () => {
+      encerrar = () => {
         if (!aberto) return;
         aberto = false;
-        clearInterval(batimento);
-        cancelarAssinatura();
+        if (batimento) clearInterval(batimento);
+        cancelarAssinatura?.();
         try {
           controlador.close();
         } catch {
@@ -54,7 +46,29 @@ export async function GET(requisicao: Request): Promise<Response> {
         }
       };
 
-      requisicao.signal.addEventListener("abort", encerrar);
+      const enviar = (texto: string) => {
+        if (!aberto) return;
+        try {
+          controlador.enqueue(codificador.encode(texto));
+        } catch {
+          // 1. O envio falhou: o outro lado já foi embora.
+          encerrar();
+        }
+      };
+
+      cancelarAssinatura = assinar((dados) => {
+        enviar(`data: ${JSON.stringify(dados)}\n\n`);
+      });
+
+      batimento = setInterval(() => enviar(": batimento\n\n"), INTERVALO_BATIMENTO);
+
+      // 2. O navegador fechou a conexão e a requisição foi abortada.
+      requisicao.signal.addEventListener("abort", () => encerrar());
+    },
+
+    // 3. Quem consome o fluxo desistiu dele, com ou sem `abort`.
+    cancel() {
+      encerrar();
     },
   });
 

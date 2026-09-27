@@ -66,22 +66,21 @@ export async function relatorioSintetico(f: FiltroConsulta): Promise<LinhaSintet
 }
 
 /**
- * Busca uma OS pelo número exato: onde ela está agora e todo o histórico
- * dela. Serve para responder ao cliente que liga perguntando do material.
+ * Busca uma OS pelo número exato: todo o histórico dela. Serve para responder
+ * ao cliente que liga perguntando do material.
+ *
+ * Onde ela está agora não vem daqui, vem do fluxo ao vivo, na tela: assim o
+ * cartão de situação acompanha sozinho, e uma OS rodando em duas máquinas ao
+ * mesmo tempo aparece nas duas.
  */
 export async function buscarOs(numeroOs: string): Promise<ResultadoBuscaOs> {
   await exigirAcesso();
 
   const os = numeroOs.trim();
-  if (!os) return { os: "", sessao: null, linhas: [], totais: { total: 0, operacao: 0, pausa: 0 } };
+  if (!os) return { os: "", linhas: [], totais: { total: 0, operacao: 0, pausa: 0 } };
 
-  const repo = await repositorio();
-  const [sessoes, { linhas, totais }] = await Promise.all([
-    repo.listarSessoesAtivas(),
-    // Interna de propósito: o vendedor pode ver a trajetória de uma OS que ele
-    // digitou, que é o trabalho dele, sem poder puxar o histórico inteiro.
-    consultaInterna({ osExata: os }),
-  ]);
-
-  return { os, sessao: sessoes.find((s) => s.numero_os === os) ?? null, linhas, totais };
+  // Interna de propósito: o vendedor pode ver a trajetória de uma OS que ele
+  // digitou, que é o trabalho dele, sem poder puxar o histórico inteiro.
+  const { linhas, totais } = await consultaInterna({ osExata: os });
+  return { os, linhas, totais };
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { listarEtapas } from "../../actions";
+import { listarEtapas } from "@/app/actions";
 import GestaoEtapas from "@/components/GestaoEtapas";
 import type { Etapa } from "@/lib/tipos";
 

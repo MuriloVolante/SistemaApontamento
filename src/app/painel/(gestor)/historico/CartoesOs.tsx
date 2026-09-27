@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Icone from "@/components/Icone";
 import { agruparPorOsEtapa, ordenarGrupos } from "@/lib/agrupar";
 import type { CriterioGrupo, GrupoOs } from "@/lib/agrupar";
-import CardsTotais from "../Totais";
+import CardsTotais from "@/app/painel/Totais";
 import { formatarDuracaoCurta, formatarHora } from "@/lib/tempo";
 import type { LinhaApontamento, Totais } from "@/lib/tipos";
 

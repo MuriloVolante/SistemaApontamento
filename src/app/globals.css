@@ -709,17 +709,48 @@ textarea {
   gap: 8px;
 }
 
+/* O nome de quem entrou abre a troca da própria senha. */
 .navbar-usuario {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  max-width: 22ch;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  max-width: 24ch;
+  height: 34px;
+  padding: 0 10px;
+  font: inherit;
   font-size: 0.82rem;
   font-weight: 500;
   color: #c3d0da;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--raio);
+  cursor: pointer;
+  transition: background var(--rapido), border-color var(--rapido), color var(--rapido);
+}
+
+.navbar-usuario:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.navbar-usuario-nome {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.formulario-senha {
+  display: flex;
+  flex-direction: column;
+}
+
+.formulario-senha .campo-rotulo {
+  margin-top: 12px;
+}
+
+.formulario-senha .campo-rotulo:first-of-type {
+  margin-top: 0;
 }
 
 .navbar-saida {
@@ -2010,6 +2041,11 @@ table.tabela tbody tr:last-child td {
    Usuários
    --------------------------------------------------------------------- */
 
+/* Segundo cartão empilhado logo abaixo de outro. */
+.cartao--seguinte {
+  margin-top: 16px;
+}
+
 .novo-usuario {
   display: flex;
   flex-wrap: wrap;
@@ -2144,8 +2180,9 @@ table.tabela tbody tr:last-child td {
 }
 
 @media (max-width: 640px) {
-  /* O nome some antes dos botões: o ícone de conta já diz que há alguém. */
-  .navbar-usuario {
+  /* O nome some antes dos botões; o ícone fica, porque é por ele que se
+     troca a própria senha. */
+  .navbar-usuario-nome {
     display: none;
   }
 
@@ -2200,55 +2237,80 @@ table.tabela tbody tr:last-child td {
 }
 
 .relatorio-opcao {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   width: 100%;
   padding: 13px 14px;
-  text-align: left;
-  font: inherit;
   background: var(--superficie);
   border: 1px solid var(--borda-media);
   border-radius: var(--raio);
-  cursor: pointer;
   transition: background var(--rapido), border-color var(--rapido), box-shadow var(--rapido),
     transform var(--rapido);
 }
 
-.relatorio-opcao:hover:not(:disabled) {
+.relatorio-opcao:hover:not(.relatorio-opcao--ocupada) {
   background: var(--acento-tenue);
   border-color: var(--acento);
   box-shadow: var(--sombra-p);
   transform: translateY(-1px);
 }
 
-.relatorio-opcao:active:not(:disabled) {
+.relatorio-opcao:active:not(.relatorio-opcao--ocupada) {
   transform: translateY(0);
 }
 
-.relatorio-opcao:disabled {
+.relatorio-opcao--ocupada {
   opacity: 0.55;
+}
+
+.relatorio-opcao-acao {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0;
+  font: inherit;
+  text-align: left;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+/* O botão cobre o cartão inteiro: clicar em qualquer ponto dele gera. */
+.relatorio-opcao-acao::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+
+.relatorio-opcao-acao:disabled {
   cursor: not-allowed;
 }
 
+.relatorio-opcao-acao:focus-visible {
+  outline: none;
+}
+
+.relatorio-opcao-acao:focus-visible::after {
+  box-shadow: var(--anel);
+  border-radius: var(--raio);
+}
+
+/* A dica fica acima da área clicável do botão, senão o toque nela geraria. */
+.relatorio-opcao .dica {
+  z-index: 1;
+}
+
 .relatorio-opcao-icone {
+  display: inline-flex;
   flex: 0 0 auto;
   color: var(--acento);
 }
 
-.relatorio-opcao-texto {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  font-size: 0.83rem;
-  line-height: 1.4;
-  color: var(--tinta-fraca);
-}
-
-.relatorio-opcao-texto strong {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+.relatorio-opcao-nome {
   font-size: 0.95rem;
   font-weight: 600;
   color: var(--tinta);

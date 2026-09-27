@@ -8,14 +8,15 @@ import Icone from "@/components/Icone";
 import Transicao from "@/components/Transicao";
 import useTituloJanela from "@/components/useTituloJanela";
 import { ProvedorUsuario } from "./ContextoUsuario";
+import TrocarSenha from "./TrocarSenha";
 import type { SessaoUsuario } from "@/lib/tipos";
 
 /** O vendedor só tem a primeira; o gestor tem todas. */
 const PAGINAS = [
-  { href: "/painel", rotulo: "Dashboard", sóGestor: false },
-  { href: "/painel/historico", rotulo: "Histórico", sóGestor: true },
-  { href: "/painel/etapas", rotulo: "Etapas", sóGestor: true },
-  { href: "/painel/usuarios", rotulo: "Usuários", sóGestor: true },
+  { href: "/painel", rotulo: "Dashboard", soGestor: false },
+  { href: "/painel/historico", rotulo: "Histórico", soGestor: true },
+  { href: "/painel/etapas", rotulo: "Etapas", soGestor: true },
+  { href: "/painel/usuarios", rotulo: "Usuários", soGestor: true },
 ];
 
 const ORDEM = PAGINAS.map((p) => p.href);
@@ -33,20 +34,9 @@ export default function NavPainel({ usuario, children }: Props) {
 
   // Para o vendedor a mesma tela é outra coisa: ele não vê painel do dia
   // nenhum, vê a consulta. O rótulo acompanha o que a tela realmente mostra.
-  const paginas = PAGINAS.filter((p) => gestor || !p.sóGestor).map((p) =>
+  const paginas = PAGINAS.filter((p) => gestor || !p.soGestor).map((p) =>
     !gestor && p.href === "/painel" ? { ...p, rotulo: "Consulta de OS" } : p
   );
-
-  /**
-   * Vendedor que chegue a outra tela pela URL volta ao dashboard.
-   *
-   * Isto é conveniência, não segurança: quem guarda o acesso de verdade são
-   * as ações do servidor, que conferem o perfil antes de devolver qualquer
-   * dado. Esconder a aba nunca foi proteção.
-   */
-  useEffect(() => {
-    if (!gestor && caminho !== "/painel") router.replace("/painel");
-  }, [gestor, caminho, router]);
 
   // "/painel" só fica ativo na raiz; as demais, no seu prefixo.
   const ativo =
@@ -54,6 +44,8 @@ export default function NavPainel({ usuario, children }: Props) {
       ?.href ?? "/painel";
 
   useTituloJanela(paginas.find((p) => p.href === ativo)?.rotulo);
+
+  const [trocandoSenha, setTrocandoSenha] = useState(false);
 
   const lista = useRef<HTMLUListElement>(null);
   const abas = useRef<Record<string, HTMLAnchorElement | null>>({});
@@ -115,10 +107,16 @@ export default function NavPainel({ usuario, children }: Props) {
           </ul>
 
           <div className="navbar-conta">
-            <span className="navbar-usuario" title={gestor ? "Gestor" : "Vendedor"}>
+            <button
+              type="button"
+              className="navbar-usuario"
+              title={`${usuario.nome} (${gestor ? "gestor" : "vendedor"}): trocar minha senha`}
+              aria-label="Trocar minha senha"
+              onClick={() => setTrocandoSenha(true)}
+            >
               <Icone nome="usuario" tamanho={16} />
-              {usuario.nome}
-            </span>
+              <span className="navbar-usuario-nome">{usuario.nome}</span>
+            </button>
 
             <Link
               href="/"
@@ -144,6 +142,8 @@ export default function NavPainel({ usuario, children }: Props) {
           </div>
         </div>
       </nav>
+
+      {trocandoSenha && <TrocarSenha aoFechar={() => setTrocandoSenha(false)} />}
 
       <main className="painel">
         <Transicao ordem={ORDEM}>

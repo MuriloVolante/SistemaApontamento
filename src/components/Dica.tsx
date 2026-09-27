@@ -15,11 +15,18 @@ interface Props {
  *
  * É um botão, não um `title` do navegador, por dois motivos: o `title` só
  * aparece depois de um segundo parado com o mouse em cima, e no celular não
- * aparece nunca. Aqui o toque abre e o toque fora fecha.
+ * aparece nunca.
+ *
+ * Cada jeito de apontar tem o seu gesto, e só um: o mouse abre ao passar por
+ * cima, o dedo abre e fecha tocando, o teclado abre ao chegar pelo Tab. Com os
+ * três valendo ao mesmo tempo, no computador o passar do mouse abria e o
+ * clique logo em seguida fechava.
  */
 export default function Dica({ children, sobre }: Props) {
   const [aberta, setAberta] = useState(false);
   const caixa = useRef<HTMLSpanElement>(null);
+  /** Com o que foi o último toque no "i": mouse, dedo ou caneta. */
+  const ponteiro = useRef<string>("mouse");
   const id = useId();
 
   // Tocar em qualquer outro lugar fecha, como se espera de uma caixa flutuante.
@@ -49,15 +56,21 @@ export default function Dica({ children, sobre }: Props) {
         aria-label={`O que é ${sobre}`}
         aria-expanded={aberta}
         aria-describedby={aberta ? id : undefined}
+        onPointerEnter={(e) => e.pointerType === "mouse" && setAberta(true)}
+        onPointerLeave={(e) => e.pointerType === "mouse" && setAberta(false)}
+        onPointerDown={(e) => {
+          ponteiro.current = e.pointerType;
+        }}
         onClick={(e) => {
-          // O nome inteiro costuma ser clicável; a dica não dispara a ação.
           e.stopPropagation();
           e.preventDefault();
-          setAberta((v) => !v);
+          // Com o mouse ela já abriu ao passar por cima; clicar não a fecha.
+          if (ponteiro.current === "mouse") setAberta(true);
+          else setAberta((v) => !v);
         }}
-        onPointerEnter={() => setAberta(true)}
-        onPointerLeave={() => setAberta(false)}
-        onFocus={() => setAberta(true)}
+        // Só o foco que veio do teclado abre: o toque também foca o botão, e
+        // abriria aqui para o clique fechar logo depois.
+        onFocus={(e) => e.currentTarget.matches(":focus-visible") && setAberta(true)}
         onBlur={() => setAberta(false)}
       >
         <Icone nome="info" tamanho={15} />

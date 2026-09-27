@@ -40,6 +40,12 @@ export default function TelaOperador() {
   const [estado, setEstado] = useState<EstadoEtapa | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [ocupado, setOcupado] = useState(false);
+  /**
+   * Trava contra o duplo clique. O `ocupado` do estado não serve para isso:
+   * cada função enxerga o valor do render em que foi criada, e dois Enter
+   * seguidos chegam os dois com `ocupado` ainda falso. A ref é lida na hora.
+   */
+  const trava = useRef(false);
   const [erro, setErro] = useState<string | null>(null);
 
   const [os, setOs] = useState("");
@@ -111,7 +117,8 @@ export default function TelaOperador() {
   async function executar(
     acao: () => Promise<{ ok: boolean; erro?: string; dados?: EstadoEtapa }>
   ) {
-    if (ocupado) return false;
+    if (trava.current) return false;
+    trava.current = true;
     setOcupado(true);
     setErro(null);
     try {
@@ -126,10 +133,11 @@ export default function TelaOperador() {
         setEstado(r.dados);
       }
       return true;
-    } catch (e) {
-      setErro((e as Error).message);
+    } catch {
+      setErro("Não foi possível falar com o servidor. Confira a rede e tente de novo.");
       return false;
     } finally {
+      trava.current = false;
       setOcupado(false);
     }
   }
@@ -201,8 +209,9 @@ export default function TelaOperador() {
    * passou, avisa e deixa a decisão com o operador; se não, inicia direto.
    */
   async function aoPedirInicio() {
-    if (!etapaId || !os.trim() || ocupado) return;
+    if (!etapaId || !os.trim() || trava.current) return;
 
+    trava.current = true;
     setOcupado(true);
     let repetida = false;
     try {
@@ -210,6 +219,9 @@ export default function TelaOperador() {
     } catch {
       // O aviso é uma cortesia, não uma trava: se a conferência falhar, aponta.
     } finally {
+      // Solta a trava e, na mesma volta síncrona, `aoIniciar` a pega de novo
+      // dentro de `executar`: nenhum outro clique consegue entrar no meio.
+      trava.current = false;
       setOcupado(false);
     }
 

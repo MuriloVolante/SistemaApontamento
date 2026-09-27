@@ -6,23 +6,23 @@ import type { AtualizacaoAoVivo } from "./tipos";
  *
  * Existe **um** relógio no servidor lendo o banco, não um por navegador
  * conectado: com 18 máquinas abertas continua sendo uma leitura por segundo no
- * total. A leitura é barata (duas consultas sobre tabelas minúsculas, há no
- * máximo uma sessão por etapa) e o pacote só é enviado quando muda de verdade,
- * então uma tela parada não gera tráfego nenhum.
+ * total. A leitura é barata (as sessões, no máximo uma por etapa, e o maior
+ * `numero` pelo índice) e o pacote só é enviado quando muda de verdade, então
+ * uma tela parada não gera tráfego nenhum.
  */
 type Assinante = (dados: AtualizacaoAoVivo) => void;
 
 const INTERVALO_LEITURA = 1000;
 
 const assinantes = new Set<Assinante>();
-let relogio: ReturnType<typeof setInterval> | null = null;
+let relogio: ReturnType<typeof setTimeout> | null = null;
 let ultimoEnvio: string | null = null;
 
 async function lerEstado(): Promise<AtualizacaoAoVivo> {
   const repo = await repositorio();
   const [sessoes, revisaoApontamentos] = await Promise.all([
     repo.listarSessoesAtivas(),
-    repo.contarApontamentos(),
+    repo.revisaoApontamentos(),
   ]);
   return { sessoes, revisaoApontamentos, agora: agora().toISOString() };
 }
@@ -49,6 +49,21 @@ async function verificar(): Promise<void> {
 }
 
 /**
+ * Próxima leitura agendada só depois que a anterior termina.
+ *
+ * Com `setInterval`, uma leitura que demorasse mais de um segundo (banco
+ * ocupado, rede lenta até o Supabase) seria atropelada pela seguinte, e as
+ * duas enviariam fora de ordem. Encadeando, nunca há duas ao mesmo tempo.
+ */
+function agendar(): void {
+  relogio = setTimeout(async () => {
+    await verificar();
+    if (assinantes.size > 0) agendar();
+    else relogio = null;
+  }, INTERVALO_LEITURA);
+}
+
+/**
  * Registra um ouvinte e devolve a função que o remove. O primeiro assinante
  * liga o relógio; a saída do último o desliga.
  */
@@ -56,7 +71,7 @@ export function assinar(assinante: Assinante): () => void {
   assinantes.add(assinante);
   const primeiro = assinantes.size === 1;
 
-  if (!relogio) relogio = setInterval(verificar, INTERVALO_LEITURA);
+  if (!relogio) agendar();
 
   // Estado atual imediatamente, para a tela não nascer vazia.
   lerEstado()
@@ -73,7 +88,7 @@ export function assinar(assinante: Assinante): () => void {
   return () => {
     assinantes.delete(assinante);
     if (assinantes.size === 0 && relogio) {
-      clearInterval(relogio);
+      clearTimeout(relogio);
       relogio = null;
     }
   };

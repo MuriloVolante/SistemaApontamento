@@ -36,13 +36,6 @@ export interface LinhaApontamento extends Apontamento {
   etapa_nome: string;
 }
 
-export interface Filtros {
-  os: string;
-  etapaId: string;
-  tipo: "" | Tipo;
-  data: string;
-}
-
 export interface Totais {
   total: number;
   operacao: number;
@@ -68,11 +61,6 @@ export type Resultado<T = null> =
   | { ok: false; erro: string };
 
 /**
- * Filtros do painel. As bordas de data chegam já convertidas em instantes
- * (ISO) pelo navegador, para que o dia filtrado seja o dia local do usuário
- * e não o do servidor.
- */
-/**
  * Perfis de acesso ao painel.
  *
  * GESTOR vê tudo: dashboard, histórico, relatórios, etapas e usuários.
@@ -80,7 +68,7 @@ export type Resultado<T = null> =
  * material do cliente que acabou de ligar.
  *
  * A tela de apontamento não entra nisto: continua sem login, como manda a
- * primeira regra do sistema.
+ * regra 7 do sistema.
  */
 export type TipoAcesso = "GESTOR" | "VENDEDOR";
 
@@ -91,6 +79,11 @@ export interface Usuario {
   ativo: boolean;
   /** Ainda com a senha padrão: o próximo login obriga a trocá-la. */
   primeiro_login: boolean;
+  /**
+   * Muda a cada troca de senha, reset e inativação. O cookie carrega o valor
+   * da hora do login; se não bater mais, a sessão foi revogada.
+   */
+  versao_sessao: number;
 }
 
 /** O mesmo usuário com o que nunca sai do servidor. */
@@ -105,6 +98,11 @@ export interface SessaoUsuario {
   tipo: TipoAcesso;
 }
 
+/**
+ * Filtros do painel. As bordas de data chegam já convertidas em instantes
+ * (ISO) pelo navegador, para que o dia filtrado seja o dia local do usuário
+ * e não o do servidor.
+ */
 export interface FiltroConsulta {
   /** Busca parcial, usada pelos filtros do histórico. */
   os?: string;
@@ -137,15 +135,19 @@ export interface AtualizacaoAoVivo {
   sessoes: SessaoAtiva[];
   /** Relógio do servidor, para o navegador corrigir o próprio. */
   agora: string;
-  /** Muda a cada apontamento gravado; sinaliza que os totais saíram do lugar. */
+  /**
+   * Maior `numero` gravado: muda a cada apontamento novo e sinaliza que os
+   * totais saíram do lugar.
+   */
   revisaoApontamentos: number;
 }
 
-/** Onde uma OS está agora e tudo o que já passou por ela. */
+/**
+ * Tudo o que já passou por uma OS. Onde ela está agora vem do fluxo ao vivo,
+ * na tela, e não daqui: assim o cartão acompanha sem reconsultar.
+ */
 export interface ResultadoBuscaOs {
   os: string;
-  /** Sessão em curso com essa OS, se houver. */
-  sessao: SessaoAtiva | null;
   linhas: LinhaApontamento[];
   totais: Totais;
 }

@@ -48,7 +48,7 @@ const DESENHOS = {
     </>
   ),
   /* Dentes de topo chato, gerados sobre a grade de 24: uma estrela de oito
-     pontas -- que era o desenho anterior -- lê como explosão, não como peça. */
+     pontas, que era o desenho anterior, lê como explosão, não como peça. */
   engrenagem: (
     <>
       <circle cx="12" cy="12" r="3.2" />

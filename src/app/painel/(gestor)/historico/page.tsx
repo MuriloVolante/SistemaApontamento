@@ -1,10 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { listarEtapas } from "../../actions";
-import { consultarApontamentos } from "../../consultas";
-import CardsTotais from "../Totais";
-import type { Recorte } from "../Totais";
+import { listarEtapas } from "@/app/actions";
+import { consultarApontamentos } from "@/app/consultas";
+import CardsTotais from "@/app/painel/Totais";
+import type { Recorte } from "@/app/painel/Totais";
 import CartoesOs from "./CartoesOs";
 import ModalRelatorio from "./ModalRelatorio";
 import Icone from "@/components/Icone";

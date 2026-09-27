@@ -4,7 +4,7 @@ import { useState } from "react";
 import Modal from "@/components/Modal";
 import Icone from "@/components/Icone";
 import Dica from "@/components/Dica";
-import { consultarApontamentos, relatorioSintetico } from "../../consultas";
+import { consultarApontamentos, relatorioSintetico } from "@/app/consultas";
 import { gerarPdfAnalitico, gerarPdfSintetico } from "@/lib/pdf";
 import { formatarData, limitesLocais } from "@/lib/tempo";
 import type { Etapa, Tipo } from "@/lib/tipos";
@@ -16,6 +16,33 @@ interface Props {
   etapas: Etapa[];
   aoFechar: () => void;
 }
+
+/** As duas opções do diálogo, com o que cada uma explica na dica. */
+const OPCOES: Array<{
+  qual: "ANALITICO" | "SINTETICO";
+  nome: string;
+  icone: "relatorio" | "etapa";
+  dica: string;
+}> = [
+  {
+    qual: "ANALITICO",
+    nome: "Analítico",
+    icone: "relatorio",
+    dica:
+      "Tudo linha por linha: cada vez que a máquina rodou e cada vez que parou, com " +
+      "hora de início, hora de fim e o motivo de cada parada. É o relatório para " +
+      "conferir o que aconteceu.",
+  },
+  {
+    qual: "SINTETICO",
+    nome: "Sintético",
+    icone: "etapa",
+    dica:
+      "Uma linha por etapa, ou seja, por máquina ou setor: o tempo total, quanto " +
+      "tempo rodou e quanto tempo ficou parada. É o relatório para bater o olho e " +
+      "comparar.",
+  },
+];
 
 const ROTULO_TIPO: Record<string, string> = {
   "": "Todos",
@@ -171,52 +198,33 @@ export default function ModalRelatorio({ herdado, etapas, aoFechar }: Props) {
 
       {erro && <p className="erro">{erro}</p>}
 
+      {/* Cada opção é um cartão com o botão de gerar e, ao lado, a dica. Os
+          dois são irmãos, não um dentro do outro: botão dentro de botão é
+          HTML inválido, e o navegador decide sozinho para quem vai o clique. O
+          botão cobre o cartão inteiro por um pseudo-elemento, então clicar em
+          qualquer ponto continua gerando; a dica fica por cima dele. */}
       <div className="modal-relatorios">
-        <button
-          type="button"
-          className="relatorio-opcao"
-          onClick={() => gerar("ANALITICO")}
-          disabled={ocupado}
-        >
-          <span className="relatorio-opcao-icone">
-            <Icone nome="relatorio" tamanho={20} />
-          </span>
-          <span className="relatorio-opcao-texto">
-            <strong>
-              {gerando === "ANALITICO" ? "Gerando…" : "Analítico"}
-              {gerando !== "ANALITICO" && (
-                <Dica sobre="o relatório analítico">
-                  Tudo linha por linha: cada vez que a máquina rodou e cada vez que
-                  parou, com hora de início, hora de fim e o motivo de cada parada. É o
-                  relatório para conferir o que aconteceu.
-                </Dica>
-              )}
-            </strong>
-          </span>
-        </button>
-
-        <button
-          type="button"
-          className="relatorio-opcao"
-          onClick={() => gerar("SINTETICO")}
-          disabled={ocupado}
-        >
-          <span className="relatorio-opcao-icone">
-            <Icone nome="etapa" tamanho={20} />
-          </span>
-          <span className="relatorio-opcao-texto">
-            <strong>
-              {gerando === "SINTETICO" ? "Gerando…" : "Sintético"}
-              {gerando !== "SINTETICO" && (
-                <Dica sobre="o relatório sintético">
-                  Uma linha por etapa, ou seja, por máquina ou setor: o tempo total,
-                  quanto tempo rodou e quanto tempo ficou parada. É o relatório para
-                  bater o olho e comparar.
-                </Dica>
-              )}
-            </strong>
-          </span>
-        </button>
+        {OPCOES.map((o) => (
+          <div
+            key={o.qual}
+            className={`relatorio-opcao ${ocupado ? "relatorio-opcao--ocupada" : ""}`}
+          >
+            <button
+              type="button"
+              className="relatorio-opcao-acao"
+              onClick={() => gerar(o.qual)}
+              disabled={ocupado}
+            >
+              <span className="relatorio-opcao-icone">
+                <Icone nome={o.icone} tamanho={20} />
+              </span>
+              <strong className="relatorio-opcao-nome">
+                {gerando === o.qual ? "Gerando…" : o.nome}
+              </strong>
+            </button>
+            {gerando !== o.qual && <Dica sobre={`o relatório ${o.nome.toLowerCase()}`}>{o.dica}</Dica>}
+          </div>
+        ))}
       </div>
 
       <div className="modal-rodape">

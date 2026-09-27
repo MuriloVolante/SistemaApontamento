@@ -9,10 +9,11 @@ import {
   definirTipoUsuario,
   excluirUsuario,
   listarUsuarios,
-  meuId,
   renomearUsuario,
   resetarSenhaUsuario,
-} from "../../usuarios";
+} from "@/app/usuarios";
+import { useUsuario } from "@/app/painel/ContextoUsuario";
+import { LIMITES } from "@/lib/nomes";
 import { SENHA_PADRAO } from "@/lib/regras-senha";
 import type { TipoAcesso, Usuario } from "@/lib/tipos";
 
@@ -50,7 +51,8 @@ type Dialogo =
 
 export default function TelaUsuarios() {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
-  const [euSou, setEuSou] = useState<string | null>(null);
+  // Quem está logado já vem do layout, conferido no servidor.
+  const euSou = useUsuario().id;
   const [erro, setErro] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
   const [ocupado, setOcupado] = useState(false);
@@ -73,8 +75,17 @@ export default function TelaUsuarios() {
 
   useEffect(() => {
     carregar();
-    meuId().then(setEuSou).catch(() => setEuSou(null));
   }, [carregar]);
+
+  /**
+   * Abre um diálogo limpo. Sem limpar, o erro da ação anterior aparecia dentro
+   * do diálogo novo como se fosse dele.
+   */
+  function abrir(d: Exclude<Dialogo, null>) {
+    setErro(null);
+    setAviso(null);
+    setDialogo(d);
+  }
 
   async function executar(acao: () => Promise<{ ok: boolean; erro?: string }>) {
     setOcupado(true);
@@ -178,6 +189,7 @@ export default function TelaUsuarios() {
               type="text"
               autoComplete="off"
               placeholder="Como ele vai entrar no sistema"
+              maxLength={LIMITES.nome}
               value={nome}
               onChange={(e) => setNome(e.target.value)}
             />
@@ -203,12 +215,13 @@ export default function TelaUsuarios() {
           </button>
         </form>
 
-        {erro && <p className="erro">{erro}</p>}
+        {/* Com diálogo aberto o erro é dele e aparece lá, uma vez só. */}
+        {erro && !dialogo && <p className="erro">{erro}</p>}
         {aviso && <p className="aviso-suave">{aviso}</p>}
       </section>
 
       {/* ---- tabela ---- */}
-      <section className="cartao" style={{ marginTop: 16 }}>
+      <section className="cartao cartao--seguinte">
         {usuarios.length === 0 ? (
           <p className="vazio">Nenhum usuário cadastrado.</p>
         ) : (
@@ -277,7 +290,7 @@ export default function TelaUsuarios() {
                             icone: "lapis",
                             aoEscolher: () => {
                               setNomeEditado(u.nome);
-                              setDialogo({ qual: "RENOMEAR", usuario: u });
+                              abrir({ qual: "RENOMEAR", usuario: u });
                             },
                           },
                           {
@@ -289,13 +302,13 @@ export default function TelaUsuarios() {
                                 : undefined,
                             aoEscolher: () => {
                               setTipoEditado(u.tipo);
-                              setDialogo({ qual: "PERFIL", usuario: u });
+                              abrir({ qual: "PERFIL", usuario: u });
                             },
                           },
                           {
                             rotulo: "Resetar senha",
                             icone: "chave",
-                            aoEscolher: () => setDialogo({ qual: "RESETAR", usuario: u }),
+                            aoEscolher: () => abrir({ qual: "RESETAR", usuario: u }),
                           },
                           {
                             rotulo: "Excluir",
@@ -305,7 +318,7 @@ export default function TelaUsuarios() {
                               u.id === euSou
                                 ? "Você não pode excluir o seu próprio usuário"
                                 : undefined,
-                            aoEscolher: () => setDialogo({ qual: "EXCLUIR", usuario: u }),
+                            aoEscolher: () => abrir({ qual: "EXCLUIR", usuario: u }),
                           },
                         ]}
                       />
@@ -325,6 +338,7 @@ export default function TelaUsuarios() {
             className="campo"
             type="text"
             autoFocus
+            maxLength={LIMITES.nome}
             value={nomeEditado}
             onChange={(e) => setNomeEditado(e.target.value)}
             onKeyDown={(e) => {

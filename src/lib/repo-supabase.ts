@@ -1,4 +1,5 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { chaveDeNome } from "./nomes";
 import { ErroUnicidade } from "./repositorio";
 import type { ProximoSegmento, Repositorio } from "./repositorio";
 import type {
@@ -38,7 +39,10 @@ interface RegistroBruto {
 const CODIGO_UNICIDADE = "23505";
 
 /** Colunas do usuário que podem circular; `senha_hash` nunca está entre elas. */
-const CAMPOS_USUARIO = "id, nome, tipo, ativo, primeiro_login";
+const CAMPOS_USUARIO = "id, nome, tipo, ativo, primeiro_login, versao_sessao";
+
+const CAMPOS_APONTAMENTO =
+  "id, numero, etapa_id, numero_os, tipo, inicio, fim, duracao_segundos, justificativa, etapas(nome)";
 
 /**
  * Quantas linhas pedir por requisição. A API REST do Supabase corta a resposta
@@ -67,7 +71,7 @@ export class RepositorioSupabase implements Repositorio {
   // ---- etapas -----------------------------------------------------------
 
   async listarEtapas(apenasAtivas: boolean): Promise<Etapa[]> {
-    let q = this.db.from("etapas").select("*").order("nome");
+    let q = this.db.from("etapas").select("id, nome, ativa").order("nome");
     if (apenasAtivas) q = q.eq("ativa", true);
     const { data, error } = await q;
     if (error) throw new Error(error.message);
@@ -75,7 +79,11 @@ export class RepositorioSupabase implements Repositorio {
   }
 
   async obterEtapa(id: string): Promise<Etapa | null> {
-    const { data, error } = await this.db.from("etapas").select("*").eq("id", id).maybeSingle();
+    const { data, error } = await this.db
+      .from("etapas")
+      .select("id, nome, ativa")
+      .eq("id", id)
+      .maybeSingle();
     if (error) throw new Error(error.message);
     return (data as Etapa) ?? null;
   }
@@ -83,8 +91,8 @@ export class RepositorioSupabase implements Repositorio {
   async criarEtapa(nome: string): Promise<Etapa> {
     const { data, error } = await this.db
       .from("etapas")
-      .insert({ nome, ativa: true })
-      .select()
+      .insert({ nome, nome_chave: chaveDeNome(nome), ativa: true })
+      .select("id, nome, ativa")
       .single();
     if (error) {
       if (error.code === CODIGO_UNICIDADE) throw new ErroUnicidade("nome de etapa repetido");
@@ -94,7 +102,10 @@ export class RepositorioSupabase implements Repositorio {
   }
 
   async renomearEtapa(id: string, nome: string): Promise<void> {
-    const { error } = await this.db.from("etapas").update({ nome }).eq("id", id);
+    const { error } = await this.db
+      .from("etapas")
+      .update({ nome, nome_chave: chaveDeNome(nome) })
+      .eq("id", id);
     if (error) {
       if (error.code === CODIGO_UNICIDADE) throw new ErroUnicidade("nome de etapa repetido");
       throw new Error(error.message);
@@ -161,7 +172,7 @@ export class RepositorioSupabase implements Repositorio {
   }
 
   /**
-   * Fecha o segmento aberto e abre o seguinte -- ou encerra a sessão, quando
+   * Fecha o segmento aberto e abre o seguinte, ou encerra a sessão quando
    * `proximo` é nulo.
    *
    * Uma chamada só, para uma função Postgres que trava a linha da sessão
@@ -189,25 +200,46 @@ export class RepositorioSupabase implements Repositorio {
 
   // ---- apontamentos -----------------------------------------------------
 
-  async contarApontamentos(): Promise<number> {
-    const { count, error } = await this.db
+  async revisaoApontamentos(): Promise<number> {
+    // Maior número pelo índice, em vez de `count: exact`, que conta a tabela
+    // inteira e ficaria mais caro a cada apontamento, uma vez por segundo.
+    const { data, error } = await this.db
       .from("apontamentos")
-      .select("id", { count: "exact", head: true });
+      .select("numero")
+      .order("numero", { ascending: false })
+      .limit(1)
+      .maybeSingle();
     if (error) throw new Error(error.message);
-    return count ?? 0;
+    return (data as { numero: number } | null)?.numero ?? 0;
   }
 
-  /** Monta a consulta filtrada. Separado porque a paginação a repete. */
-  private filtrar(f: FiltroConsulta) {
+  async existeApontamento(etapaId: string, numeroOs: string): Promise<boolean> {
+    const { data, error } = await this.db
+      .from("apontamentos")
+      .select("id")
+      .eq("etapa_id", etapaId)
+      .eq("numero_os", numeroOs)
+      .limit(1);
+    if (error) throw new Error(error.message);
+    return (data ?? []).length > 0;
+  }
+
+  /**
+   * Monta a consulta filtrada. Separado porque a paginação a repete.
+   *
+   * Ordena por `inicio` e desempata por `numero`: várias etapas costumam ter o
+   * mesmo início, porque o tempo é truncado ao segundo, e paginar sobre uma
+   * ordem que muda entre uma página e outra duplica umas linhas e pula outras.
+   * A contagem vai só na primeira página, que é a única que a usa.
+   */
+  private filtrar(f: FiltroConsulta, contar: boolean) {
     let q = this.db
       .from("apontamentos")
-      .select(
-        "id, numero, etapa_id, numero_os, tipo, inicio, fim, duracao_segundos, justificativa, etapas(nome)",
-        { count: "exact" }
-      )
-      .order("inicio", { ascending: true });
+      .select(CAMPOS_APONTAMENTO, contar ? { count: "exact" } : undefined)
+      .order("inicio", { ascending: true })
+      .order("numero", { ascending: true });
 
-    if (f.os?.trim()) q = q.ilike("numero_os", `%${f.os.trim()}%`);
+    if (f.os?.trim()) q = q.ilike("numero_os", `%${escaparCuringas(f.os.trim())}%`);
     if (f.osExata?.trim()) q = q.eq("numero_os", f.osExata.trim());
     if (f.etapaId) q = q.eq("etapa_id", f.etapaId);
     if (f.tipo) q = q.eq("tipo", f.tipo);
@@ -225,7 +257,8 @@ export class RepositorioSupabase implements Repositorio {
     let passo = PAGINA;
 
     while (brutos.length < total) {
-      const { data, error, count } = await this.filtrar(f).range(
+      const primeira = brutos.length === 0;
+      const { data, error, count } = await this.filtrar(f, primeira).range(
         brutos.length,
         brutos.length + passo - 1
       );
@@ -235,7 +268,7 @@ export class RepositorioSupabase implements Repositorio {
       if (pagina.length === 0) break;
 
       // `count` é o tamanho do resultado inteiro, não o da página.
-      if (count !== null) total = count;
+      if (primeira && count !== null) total = count;
       passo = Math.min(passo, pagina.length);
       brutos.push(...pagina);
     }
@@ -256,8 +289,19 @@ export class RepositorioSupabase implements Repositorio {
 
   // ---- usuários do painel ------------------------------------------------
 
+  async contarUsuarios(): Promise<number> {
+    const { count, error } = await this.db
+      .from("usuarios")
+      .select("id", { count: "exact", head: true });
+    if (error) throw new Error(error.message);
+    return count ?? 0;
+  }
+
   async listarUsuarios(): Promise<Usuario[]> {
-    const { data, error } = await this.db.from("usuarios").select(CAMPOS_USUARIO).order("nome");
+    const { data, error } = await this.db
+      .from("usuarios")
+      .select(CAMPOS_USUARIO)
+      .order("nome_chave");
     if (error) throw new Error(error.message);
     return (data ?? []) as unknown as Usuario[];
   }
@@ -273,12 +317,13 @@ export class RepositorioSupabase implements Repositorio {
   }
 
   async obterUsuarioPorNome(nome: string): Promise<UsuarioComSenha | null> {
-    // `ilike` sem curinga é igualdade sem diferenciar maiúsculas: quem
-    // cadastrou "Joao" entra como "joao".
+    // Igualdade exata na chave. O `ilike` de antes tratava `%` e `_` como
+    // curinga: "joao_silva" casava com "joaoXsilva", e um `%` com mais de um
+    // usuário cadastrado fazia o `maybeSingle` estourar com o texto do banco.
     const { data, error } = await this.db
       .from("usuarios")
       .select(`${CAMPOS_USUARIO}, senha_hash`)
-      .ilike("nome", nome)
+      .eq("nome_chave", chaveDeNome(nome))
       .maybeSingle();
     if (error) throw new Error(error.message);
     return (data as unknown as UsuarioComSenha) ?? null;
@@ -287,7 +332,14 @@ export class RepositorioSupabase implements Repositorio {
   async criarUsuario(nome: string, tipo: TipoAcesso, senhaHash: string): Promise<Usuario> {
     const { data, error } = await this.db
       .from("usuarios")
-      .insert({ nome, tipo, ativo: true, senha_hash: senhaHash, primeiro_login: true })
+      .insert({
+        nome,
+        nome_chave: chaveDeNome(nome),
+        tipo,
+        ativo: true,
+        senha_hash: senhaHash,
+        primeiro_login: true,
+      })
       .select(CAMPOS_USUARIO)
       .single();
     if (error) {
@@ -298,7 +350,10 @@ export class RepositorioSupabase implements Repositorio {
   }
 
   async renomearUsuario(id: string, nome: string): Promise<void> {
-    const { error } = await this.db.from("usuarios").update({ nome }).eq("id", id);
+    const { error } = await this.db
+      .from("usuarios")
+      .update({ nome, nome_chave: chaveDeNome(nome) })
+      .eq("id", id);
     if (error) {
       if (error.code === CODIGO_UNICIDADE) throw new ErroUnicidade("nome de usuário repetido");
       throw new Error(error.message);
@@ -310,16 +365,17 @@ export class RepositorioSupabase implements Repositorio {
     if (error) throw new Error(error.message);
   }
 
+  // A `versao_sessao` sobe sozinha: um gatilho no banco a incrementa sempre
+  // que `ativo` ou `senha_hash` mudam (ver schema.sql). A API REST não sabe
+  // escrever `versao_sessao = versao_sessao + 1`, e ler para depois gravar
+  // deixaria duas revogações simultâneas valerem por uma.
+
   async definirAtivoUsuario(id: string, ativo: boolean): Promise<void> {
     const { error } = await this.db.from("usuarios").update({ ativo }).eq("id", id);
     if (error) throw new Error(error.message);
   }
 
-  async definirSenhaUsuario(
-    id: string,
-    senhaHash: string,
-    primeiroLogin: boolean
-  ): Promise<void> {
+  async definirSenhaUsuario(id: string, senhaHash: string, primeiroLogin: boolean): Promise<void> {
     const { error } = await this.db
       .from("usuarios")
       .update({ senha_hash: senhaHash, primeiro_login: primeiroLogin })
@@ -356,4 +412,9 @@ export class RepositorioSupabase implements Repositorio {
     if (!efetivo) throw new Error(`Não foi possível gravar a configuração ${chave}.`);
     return efetivo;
   }
+}
+
+/** A busca parcial de OS não pode deixar `%` e `_` digitados virarem curinga. */
+function escaparCuringas(texto: string): string {
+  return texto.replace(/[\\%_]/g, "\\$&");
 }

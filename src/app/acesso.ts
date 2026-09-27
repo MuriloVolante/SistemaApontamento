@@ -1,15 +1,25 @@
 "use server";
 
-import { repositorio } from "@/lib/repositorio";
-import { conferir, criticarSenhaNova, embaralhar, SENHA_PADRAO } from "@/lib/senha";
-import { criarSessao, encerrarSessao, lerSessao } from "@/lib/sessao";
-import type { Resultado, SessaoUsuario } from "@/lib/tipos";
+import { headers } from "next/headers";
+import { falhaInesperada } from "@/lib/erros";
+import { chaveDeNome } from "@/lib/nomes";
+import { ErroUnicidade, repositorio } from "@/lib/repositorio";
+import {
+  conferir,
+  criticarSenhaNova,
+  embaralhar,
+  HASH_FICTICIO,
+  SENHA_PADRAO,
+} from "@/lib/senha";
+import { criarSessao, encerrarSessao, lerSessao, validarSessao } from "@/lib/sessao";
+import { registrarFalha, registrarSucesso, segundosDeBloqueio } from "@/lib/tentativas";
+import type { Resultado } from "@/lib/tipos";
 
 /** Nome do gestor criado quando o sistema ainda não tem nenhum usuário. */
 const GESTOR_INICIAL = "gestor";
 
 /**
- * Garante que exista pelo menos um gestor.
+ * Garante que exista pelo menos um usuário.
  *
  * Sem isto, um banco novo trancaria a porta com a chave do lado de dentro:
  * criar usuário exige ser gestor, e não haveria nenhum. O gestor inicial nasce
@@ -18,25 +28,28 @@ const GESTOR_INICIAL = "gestor";
  */
 async function garantirGestorInicial(): Promise<void> {
   const repo = await repositorio();
-  if ((await repo.listarUsuarios()).length > 0) return;
+  if ((await repo.contarUsuarios()) > 0) return;
 
   try {
-    await repo.criarUsuario(GESTOR_INICIAL, "GESTOR", embaralhar(SENHA_PADRAO));
-  } catch {
-    // Dois processos subindo juntos: o segundo encontra o nome já usado e
-    // pode seguir em frente, o que importava era existir um gestor.
+    await repo.criarUsuario(GESTOR_INICIAL, "GESTOR", await embaralhar(SENHA_PADRAO));
+  } catch (e) {
+    // Dois processos subindo juntos: o segundo encontra o nome já usado e pode
+    // seguir, porque o que importava era existir um gestor. Qualquer outro
+    // erro é de verdade e sobe.
+    if (!(e instanceof ErroUnicidade)) throw e;
   }
 }
 
-/** Quem está no painel agora, ou null. Usado pelas telas, não por segurança. */
-export async function sessaoAtual(): Promise<(SessaoUsuario & { trocar: boolean }) | null> {
-  return lerSessao();
-}
-
-/** Existe algum usuário com a senha ainda por definir? Só para o texto da tela. */
+/** A sessão atual é a restrita, de quem ainda precisa definir a senha? */
 export async function precisaDefinirSenha(): Promise<boolean> {
   const sessao = await lerSessao();
   return Boolean(sessao?.trocar);
+}
+
+/** Endereço de quem está tentando entrar, quando o servidor o conhece. */
+async function enderecoDoCliente(): Promise<string> {
+  const h = await headers();
+  return (h.get("x-forwarded-for")?.split(",")[0] ?? h.get("x-real-ip") ?? "").trim();
 }
 
 export async function entrar(
@@ -46,51 +59,118 @@ export async function entrar(
   const usuario = nome.trim();
   if (!usuario || !senha) return { ok: false, erro: "Informe o usuário e a senha." };
 
-  await garantirGestorInicial();
+  const chaveTentativa = `${chaveDeNome(usuario).slice(0, 60)}|${await enderecoDoCliente()}`;
+  const espera = segundosDeBloqueio(chaveTentativa);
+  if (espera > 0) {
+    return { ok: false, erro: `Muitas tentativas erradas. Aguarde ${espera} s e tente de novo.` };
+  }
 
-  const encontrado = await (await repositorio()).obterUsuarioPorNome(usuario);
+  try {
+    await garantirGestorInicial();
+    const encontrado = await (await repositorio()).obterUsuarioPorNome(usuario);
 
-  // Mensagem única para usuário inexistente e senha errada: dizer qual dos
-  // dois falhou entregaria a lista de quem tem acesso a quem ficar tentando.
-  const generico = { ok: false as const, erro: "Usuário ou senha incorretos." };
-  if (!encontrado) return generico;
-  if (!conferir(senha, encontrado.senha_hash)) return generico;
+    // Mensagem única para usuário inexistente, senha errada e usuário inativo:
+    // dizer qual dos três falhou entregaria a quem fica tentando a lista de
+    // quem tem cadastro, ou a senha certa de uma conta desligada. A senha é
+    // conferida mesmo sem usuário, contra um hash fictício, para o tempo de
+    // resposta também não entregar.
+    const generico = { ok: false as const, erro: "Usuário ou senha incorretos." };
+    const senhaCerta = await conferir(senha, encontrado?.senha_hash ?? HASH_FICTICIO);
 
-  if (!encontrado.ativo) return { ok: false, erro: "Este usuário está inativo." };
+    if (!encontrado || !senhaCerta) {
+      registrarFalha(chaveTentativa);
+      return generico;
+    }
+    if (!encontrado.ativo) return generico;
 
-  const dados = { id: encontrado.id, nome: encontrado.nome, tipo: encontrado.tipo };
+    registrarSucesso(chaveTentativa);
 
-  // Com a senha ainda provisória, a sessão nasce restrita: serve só para
-  // chegar ao formulário de troca, e `exigirAcesso` recusa todo o resto.
-  await criarSessao(dados, encontrado.primeiro_login);
+    // Com a senha ainda provisória, a sessão nasce restrita: serve só para
+    // chegar ao formulário de troca, e o painel recusa todo o resto.
+    await criarSessao(
+      { id: encontrado.id, nome: encontrado.nome, tipo: encontrado.tipo },
+      encontrado.primeiro_login,
+      encontrado.versao_sessao
+    );
 
-  return { ok: true, dados: { trocarSenha: encontrado.primeiro_login } };
+    return { ok: true, dados: { trocarSenha: encontrado.primeiro_login } };
+  } catch (e) {
+    return falhaInesperada("entrar", e);
+  }
 }
 
 /**
- * Define a senha no primeiro acesso (ou depois de um reset).
+ * Define a senha no primeiro acesso ou depois de um reset.
  *
- * Só vale para quem já provou a senha provisória: a sessão restrita criada
- * por `entrar` é a credencial aqui.
+ * Só vale para a sessão restrita que `entrar` cria quando a senha ainda é a
+ * padrão: foi com ela que a pessoa provou quem é. Quem já está com a sessão
+ * completa troca a senha por `trocarPropriaSenha`, que pede a atual.
  */
 export async function definirSenha(nova: string, confirmacao: string): Promise<Resultado> {
   const sessao = await lerSessao();
+  if (!sessao?.trocar) return { ok: false, erro: "Sua sessão terminou. Entre de novo." };
+
+  const critica = criticarSenhaNova(nova, confirmacao);
+  if (critica) return { ok: false, erro: critica };
+
+  try {
+    const repo = await repositorio();
+    const usuario = await repo.obterUsuario(sessao.id);
+
+    // Um segundo reset depois deste login já trocou a versão: o cookie velho
+    // não serve mais nem para isto.
+    if (!usuario || !usuario.ativo || usuario.versao_sessao !== sessao.versao) {
+      return { ok: false, erro: "Sua sessão terminou. Entre de novo." };
+    }
+
+    await repo.definirSenhaUsuario(sessao.id, await embaralhar(nova), false);
+    return renovarSessao(sessao.id);
+  } catch (e) {
+    return falhaInesperada("definirSenha", e);
+  }
+}
+
+/**
+ * Troca da própria senha por quem já está no painel. Pede a senha atual: uma
+ * aba esquecida aberta não pode bastar para alguém tomar a conta.
+ */
+export async function trocarPropriaSenha(
+  atual: string,
+  nova: string,
+  confirmacao: string
+): Promise<Resultado> {
+  const sessao = await validarSessao();
   if (!sessao) return { ok: false, erro: "Sua sessão terminou. Entre de novo." };
 
   const critica = criticarSenhaNova(nova, confirmacao);
   if (critica) return { ok: false, erro: critica };
 
-  const repo = await repositorio();
-  const usuario = await repo.obterUsuario(sessao.id);
-  if (!usuario || !usuario.ativo) {
-    return { ok: false, erro: "Este usuário não tem mais acesso." };
+  try {
+    const repo = await repositorio();
+    const comSenha = await repo.obterUsuarioPorNome(sessao.nome);
+    if (!comSenha || !(await conferir(atual, comSenha.senha_hash))) {
+      return { ok: false, erro: "A senha atual não confere." };
+    }
+
+    await repo.definirSenhaUsuario(sessao.id, await embaralhar(nova), false);
+    // A versão mudou e derrubou as outras sessões desta pessoa; esta aqui
+    // renasce com a versão nova para continuar aberta.
+    return renovarSessao(sessao.id);
+  } catch (e) {
+    return falhaInesperada("trocarPropriaSenha", e);
   }
+}
 
-  await repo.definirSenhaUsuario(sessao.id, embaralhar(nova), false);
+/** Regrava o cookie com o estado atual do usuário, já sem restrição. */
+async function renovarSessao(id: string): Promise<Resultado> {
+  const usuario = await (await repositorio()).obterUsuario(id);
+  if (!usuario) return { ok: false, erro: "Sua sessão terminou. Entre de novo." };
 
-  // A sessão renasce sem a restrição: daqui em diante o painel abre inteiro.
-  await criarSessao({ id: usuario.id, nome: usuario.nome, tipo: usuario.tipo }, false);
-
+  await criarSessao(
+    { id: usuario.id, nome: usuario.nome, tipo: usuario.tipo },
+    false,
+    usuario.versao_sessao
+  );
   return { ok: true, dados: null };
 }
 
