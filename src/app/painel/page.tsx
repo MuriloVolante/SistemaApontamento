@@ -20,6 +20,19 @@ const TOTAIS_ZERADOS: Totais = { total: 0, operacao: 0, pausa: 0 };
 /** Só entra em ação se o fluxo de eventos não estiver disponível. */
 const INTERVALO_RESERVA = 15_000;
 
+/**
+ * Quedas do fluxo, e em que janela de tempo, para desistir dele de vez.
+ *
+ * Em hospedagem sem processo fixo (Vercel e afins) a conexão é cortada ao
+ * atingir o tempo máximo da função — o EventSource reconecta, é cortado de
+ * novo, e cada volta levanta uma instância nova lendo o banco. Quatro quedas
+ * em dois minutos é o sinal de que aquele servidor não segura um fluxo aberto:
+ * melhor assumir a consulta periódica e parar de insistir. Numa queda
+ * esporádica de rede a contagem expira sozinha e o fluxo continua valendo.
+ */
+const QUEDAS_ATE_DESISTIR = 4;
+const JANELA_DE_QUEDAS = 120_000;
+
 export default function Dashboard() {
   const [sessoes, setSessoes] = useState<SessaoAtiva[]>([]);
   const [totais, setTotais] = useState<Totais>(TOTAIS_ZERADOS);
@@ -93,6 +106,7 @@ export default function Dashboard() {
     };
 
     const fonte = new EventSource("/api/ativos");
+    let quedas: number[] = [];
 
     fonte.onopen = () => {
       if (!vivo) return;
@@ -116,6 +130,10 @@ export default function Dashboard() {
       // O EventSource tenta reconectar sozinho; até lá, a reserva assume.
       setAoVivo(false);
       ligarReserva();
+
+      const marco = Date.now();
+      quedas = [...quedas.filter((q) => marco - q < JANELA_DE_QUEDAS), marco];
+      if (quedas.length >= QUEDAS_ATE_DESISTIR) fonte.close();
     };
 
     return () => {

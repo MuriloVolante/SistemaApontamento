@@ -1,5 +1,4 @@
 import type {
-  Apontamento,
   Etapa,
   FiltroConsulta,
   LinhaApontamento,
@@ -16,9 +15,14 @@ export class ErroUnicidade extends Error {
   }
 }
 
-export interface AlteracaoSessao {
+/**
+ * Estado em que a sessao fica depois de fechar o segmento aberto. Note que
+ * nao tem `segmento_inicio`: o inicio do proximo segmento e sempre o fim do
+ * anterior, e quem decide isso e o repositorio. Assim nao existe caminho no
+ * codigo capaz de abrir uma lacuna entre segmentos (regra 2).
+ */
+export interface ProximoSegmento {
   status: Status;
-  segmento_inicio: string;
   motivo: string | null;
 }
 
@@ -40,22 +44,59 @@ export interface Repositorio {
   /** Todas as sessoes em curso, com o nome da etapa (dashboard). */
   listarSessoesAtivas(): Promise<SessaoAtiva[]>;
   criarSessao(sessao: Sessao): Promise<void>;
-  alterarSessao(etapaId: string, alteracao: AlteracaoSessao): Promise<void>;
-  excluirSessao(etapaId: string): Promise<void>;
 
-  inserirApontamento(apontamento: Omit<Apontamento, "id" | "numero">): Promise<void>;
+  /**
+   * Fecha o segmento aberto, gravando-o como apontamento, e no mesmo movimento
+   * abre o seguinte -- ou encerra a sessao, quando `proximo` e nulo.
+   *
+   * As duas escritas acontecem numa unica transacao, com a linha da sessao
+   * travada. Em duas chamadas separadas, uma queda no meio deixaria o
+   * apontamento gravado e a sessao no estado antigo, e um duplo clique
+   * gravaria o mesmo segmento duas vezes.
+   *
+   * Devolve `false` quando a sessao nao esta mais em `statusEsperado` -- outra
+   * aba chegou primeiro. Nesse caso nada foi escrito.
+   */
+  avancarSegmento(
+    etapaId: string,
+    statusEsperado: Status,
+    fimISO: string,
+    proximo: ProximoSegmento | null
+  ): Promise<boolean>;
+
   /** Total de apontamentos gravados. Como só há inserção, serve de número de
    *  revisão barato para detectar mudanças sem reler a tabela inteira. */
   contarApontamentos(): Promise<number>;
   consultarApontamentos(filtro: FiltroConsulta): Promise<LinhaApontamento[]>;
 }
 
-/** Só usa Supabase quando as duas variáveis estiverem preenchidas. */
+/**
+ * Só usa Supabase quando as duas variáveis do servidor estiverem preenchidas.
+ *
+ * Sem prefixo `NEXT_PUBLIC_` de propósito: o que leva esse prefixo é embutido
+ * no pacote que vai para o navegador, e a chave de acesso ao banco não pode
+ * sair do servidor. Ninguém no navegador fala com o Supabase — todo o acesso
+ * passa pelas Server Actions.
+ */
 export function usandoSupabase(): boolean {
   return Boolean(
-    process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() &&
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim()
+    process.env.SUPABASE_URL?.trim() && process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()
   );
+}
+
+/**
+ * Nomes usados até a versão anterior. Se sobraram na configuração, é quase
+ * certo que a intenção era usar Supabase — e cair calado no SQLite local
+ * significaria gravar produção num arquivo que ninguém vai olhar.
+ */
+function avisarVariaveisAntigas(): void {
+  if (process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()) {
+    throw new Error(
+      "As variáveis NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY não são mais " +
+        "usadas: renomeie para SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY (chave service_role, " +
+        "sem NEXT_PUBLIC_, para não ir ao navegador)."
+    );
+  }
 }
 
 let instancia: Repositorio | null = null;
@@ -67,6 +108,7 @@ export async function repositorio(): Promise<Repositorio> {
     const { RepositorioSupabase } = await import("./repo-supabase");
     instancia = new RepositorioSupabase();
   } else {
+    avisarVariaveisAntigas();
     const { RepositorioSqlite } = await import("./repo-sqlite");
     instancia = new RepositorioSqlite();
   }

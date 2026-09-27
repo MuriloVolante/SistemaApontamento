@@ -61,20 +61,94 @@ begin
 end $$;
 
 -- ---------------------------------------------------------------------
--- RLS liberado para o papel anônimo (sem autenticação, conforme escopo)
+-- Avanco de segmento: as duas escritas numa transacao so
 -- ---------------------------------------------------------------------
 
+-- Fechar o segmento aberto e abrir o seguinte sao duas escritas que precisam
+-- valer juntas. Em duas chamadas separadas, uma queda de rede no meio deixaria
+-- o apontamento gravado e a sessao no estado antigo -- e dois cliques no mesmo
+-- botao gravariam o mesmo segmento duas vezes. Aqui a linha da sessao e travada
+-- (`for update`): o segundo clique espera, entra, encontra o status ja mudado e
+-- devolve false sem escrever nada.
+--
+-- `p_novo_status` nulo significa finalizar: grava o ultimo segmento e libera a
+-- etapa. O inicio do proximo segmento e sempre `p_fim`, de modo que nao existe
+-- caminho no codigo capaz de abrir uma lacuna entre segmentos (regra 2).
+create or replace function avancar_segmento(
+  p_etapa_id        uuid,
+  p_status_esperado text,
+  p_fim             timestamptz,
+  p_novo_status     text,
+  p_novo_motivo     text
+) returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $fn$
+declare
+  s sessoes;
+begin
+  select * into s from sessoes where etapa_id = p_etapa_id for update;
+
+  -- Sessao inexistente ou ja alterada por outra aba: nada a fazer.
+  if not found or s.status <> p_status_esperado then
+    return false;
+  end if;
+
+  insert into apontamentos
+    (etapa_id, numero_os, tipo, inicio, fim, duracao_segundos, justificativa)
+  values (
+    s.etapa_id,
+    s.numero_os,
+    case when s.status = 'EM_ANDAMENTO' then 'OPERACAO' else 'PAUSA' end,
+    s.segmento_inicio,
+    p_fim,
+    greatest(0, extract(epoch from (p_fim - s.segmento_inicio))::int),
+    -- Justificativa so existe em segmento de pausa.
+    case when s.status = 'PAUSADO' then s.motivo else null end
+  );
+
+  if p_novo_status is null then
+    delete from sessoes where etapa_id = p_etapa_id;
+  else
+    update sessoes
+       set status = p_novo_status,
+           segmento_inicio = p_fim,
+           motivo = p_novo_motivo
+     where etapa_id = p_etapa_id;
+  end if;
+
+  return true;
+end
+$fn$;
+
+-- ---------------------------------------------------------------------
+-- Acesso: somente pelo servidor
+-- ---------------------------------------------------------------------
+
+-- O sistema nao tem login (regra 1), e por isso mesmo o banco nao pode ficar
+-- aberto ao papel anonimo: a chave publicavel de um projeto Supabase viaja no
+-- navegador de qualquer visitante, e com RLS liberada ela daria acesso de
+-- leitura, escrita e exclusao direto pela API REST.
+--
+-- Todo o acesso passa pelas Server Actions, no servidor, com a chave
+-- `service_role` -- que nunca chega ao navegador e ignora RLS por natureza.
+-- Entao: RLS ligada e nenhuma politica. Sem politica, anon e authenticated nao
+-- leem nem gravam nada; o servidor continua com acesso total.
 alter table etapas       enable row level security;
 alter table apontamentos enable row level security;
 alter table sessoes      enable row level security;
 
+-- Politicas permissivas de versoes anteriores deste arquivo.
 drop policy if exists etapas_anon       on etapas;
 drop policy if exists apontamentos_anon on apontamentos;
 drop policy if exists sessoes_anon      on sessoes;
 
-create policy etapas_anon       on etapas       for all to anon, authenticated using (true) with check (true);
-create policy apontamentos_anon on apontamentos for all to anon, authenticated using (true) with check (true);
-create policy sessoes_anon      on sessoes      for all to anon, authenticated using (true) with check (true);
+-- RLS sozinha nao basta: sem o revoke, as tabelas continuariam visiveis para o
+-- papel anonimo caso alguem crie uma politica por engano mais tarde.
+revoke all on etapas, apontamentos, sessoes from anon, authenticated;
+revoke execute on function avancar_segmento(uuid, text, timestamptz, text, text)
+  from public, anon, authenticated;
 
 -- ---------------------------------------------------------------------
 -- Etapas de exemplo (opcional — remova se for cadastrar pelo painel)

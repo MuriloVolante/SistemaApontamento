@@ -1,15 +1,7 @@
 "use server";
 
 import { agora, repositorio, ErroUnicidade } from "@/lib/repositorio";
-import { diferencaEmSegundos } from "@/lib/tempo";
-import type {
-  Etapa,
-  Sessao,
-  EstadoEtapa,
-  PainelAtivo,
-  Resultado,
-  Tipo,
-} from "@/lib/tipos";
+import type { Etapa, EstadoEtapa, PainelAtivo, Resultado } from "@/lib/tipos";
 
 // =====================================================================
 // Etapas
@@ -106,21 +98,6 @@ export async function obterEstado(etapaId: string): Promise<EstadoEtapa> {
   return { etapa, sessao, agora: agora().toISOString() };
 }
 
-/** Fecha o segmento aberto da sessão, gravando-o como apontamento. */
-async function fecharSegmento(sessao: Sessao, fim: Date): Promise<void> {
-  const tipo: Tipo = sessao.status === "EM_ANDAMENTO" ? "OPERACAO" : "PAUSA";
-  await (await repositorio()).inserirApontamento({
-    etapa_id: sessao.etapa_id,
-    numero_os: sessao.numero_os,
-    tipo,
-    inicio: sessao.segmento_inicio,
-    fim: fim.toISOString(),
-    duracao_segundos: diferencaEmSegundos(sessao.segmento_inicio, fim),
-    // Justificativa só existe em segmento de pausa.
-    justificativa: tipo === "PAUSA" ? sessao.motivo : null,
-  });
-}
-
 export async function iniciar(etapaId: string, numeroOs: string): Promise<Resultado<EstadoEtapa>> {
   const os = numeroOs.trim();
   if (!os) return { ok: false, erro: "Digite o número da OS para iniciar." };
@@ -158,13 +135,13 @@ export async function parar(etapaId: string, motivo: string): Promise<Resultado<
   if (!sessao) return { ok: false, erro: "Não há apontamento em andamento." };
   if (sessao.status !== "EM_ANDAMENTO") return { ok: false, erro: "O apontamento já está pausado." };
 
-  const marco = agora();
-  await fecharSegmento(sessao, marco);
-  await repo.alterarSessao(etapaId, {
+  // Fechar a operação e abrir a pausa é uma escrita só: se o clique chegar
+  // duas vezes, o segundo encontra a sessão já pausada e não grava nada.
+  const aplicado = await repo.avancarSegmento(etapaId, "EM_ANDAMENTO", agora().toISOString(), {
     status: "PAUSADO",
-    segmento_inicio: marco.toISOString(),
     motivo: texto,
   });
+  if (!aplicado) return { ok: false, erro: "O apontamento já está pausado." };
 
   return { ok: true, dados: await obterEstado(etapaId) };
 }
@@ -176,13 +153,11 @@ export async function retomar(etapaId: string): Promise<Resultado<EstadoEtapa>> 
   if (!sessao) return { ok: false, erro: "Não há apontamento em andamento." };
   if (sessao.status !== "PAUSADO") return { ok: false, erro: "O apontamento não está pausado." };
 
-  const marco = agora();
-  await fecharSegmento(sessao, marco);
-  await repo.alterarSessao(etapaId, {
+  const aplicado = await repo.avancarSegmento(etapaId, "PAUSADO", agora().toISOString(), {
     status: "EM_ANDAMENTO",
-    segmento_inicio: marco.toISOString(),
     motivo: null,
   });
+  if (!aplicado) return { ok: false, erro: "O apontamento não está pausado." };
 
   return { ok: true, dados: await obterEstado(etapaId) };
 }
@@ -193,8 +168,9 @@ export async function finalizar(etapaId: string): Promise<Resultado<EstadoEtapa>
   const sessao = await repo.obterSessao(etapaId);
   if (!sessao) return { ok: false, erro: "Não há apontamento em andamento." };
 
-  await fecharSegmento(sessao, agora());
-  await repo.excluirSessao(etapaId);
+  // `null` no lugar do próximo segmento: grava o último e libera a etapa.
+  const aplicado = await repo.avancarSegmento(etapaId, sessao.status, agora().toISOString(), null);
+  if (!aplicado) return { ok: false, erro: "O apontamento mudou de estado. Confira a tela." };
 
   return { ok: true, dados: await obterEstado(etapaId) };
 }

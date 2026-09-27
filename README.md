@@ -82,7 +82,7 @@ do operador.
 A camada de dados é uma interface só (`src/lib/repositorio.ts`) com duas
 implementações que gravam o mesmo esquema. A escolha é automática:
 
-- `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_ANON_KEY` **vazias** → SQLite local (padrão);
+- `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` **vazias** → SQLite local (padrão);
 - as duas **preenchidas** → Supabase.
 
 Ou seja: rodar local não exige decisão nenhuma, e migrar para a nuvem depois é
@@ -297,13 +297,40 @@ chão de fábrica compartilhem o mesmo banco:
 
 1. Crie um projeto no [Supabase](https://supabase.com) e rode
    [`supabase/schema.sql`](supabase/schema.sql) no SQL Editor.
-2. Copie `.env.local.example` para `.env.local` e preencha `NEXT_PUBLIC_SUPABASE_URL`
-   e `NEXT_PUBLIC_SUPABASE_ANON_KEY` (Project Settings → API).
+2. Copie `.env.local.example` para `.env.local` e preencha `SUPABASE_URL` e
+   `SUPABASE_SERVICE_ROLE_KEY` (Project Settings → API).
 3. Reinicie o sistema. Ele passa a gravar no Supabase automaticamente.
 4. Para hospedar: importe o repositório na Vercel e cadastre as mesmas duas
    variáveis em Settings → Environment Variables.
 
 Os dados do SQLite local **não** são migrados automaticamente.
+
+### Por que a chave *service_role*, e não a publicável
+
+Como não há login (regra 1), o banco não pode ficar aberto ao papel anônimo:
+a chave publicável de um projeto Supabase viaja no navegador de qualquer
+visitante, e com RLS liberada ela daria leitura, escrita e exclusão direto pela
+API REST — bastaria abrir o console do navegador.
+
+Então o acesso é só pelo servidor. As variáveis não levam o prefixo
+`NEXT_PUBLIC_` (que embutiria o valor no pacote do navegador), o
+`schema.sql` liga RLS **sem nenhuma política** e revoga os privilégios de
+`anon`, e todo o tráfego passa pelas server actions. Nenhuma linha do código do
+navegador fala com o Supabase.
+
+### Atualização ao vivo e tipo de hospedagem
+
+O painel recebe as mudanças por um fluxo aberto (SSE) alimentado por um único
+relógio no servidor. Isso pressupõe um **processo que fica de pé**: é o caso do
+`iniciar.bat` num PC da gráfica, de um container ou de hospedagens como Render
+e Railway.
+
+Em hospedagem sem processo fixo — Vercel e afins — a conexão é cortada ao
+atingir o tempo máximo da função, e cada reconexão levanta uma instância nova
+lendo o banco. O painel detecta isso (quatro quedas em dois minutos), desiste do
+fluxo e passa a consultar a cada 15 segundos. Continua correto e atualizado,
+só não é instantâneo. Se a atualização instantânea importar, prefira uma
+hospedagem com processo fixo.
 
 ---
 

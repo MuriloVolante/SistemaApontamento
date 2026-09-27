@@ -3,9 +3,9 @@ import fs from "node:fs";
 import path from "node:path";
 import Database from "better-sqlite3";
 import { ErroUnicidade } from "./repositorio";
-import type { AlteracaoSessao, Repositorio } from "./repositorio";
+import { diferencaEmSegundos } from "./tempo";
+import type { ProximoSegmento, Repositorio } from "./repositorio";
 import type {
-  Apontamento,
   Etapa,
   FiltroConsulta,
   LinhaApontamento,
@@ -235,40 +235,62 @@ export class RepositorioSqlite implements Repositorio {
     }
   }
 
-  async alterarSessao(etapaId: string, a: AlteracaoSessao): Promise<void> {
-    this.db
-      .prepare(
-        "update sessoes set status = ?, segmento_inicio = ?, motivo = ? where etapa_id = ?"
-      )
-      .run(a.status, a.segmento_inicio, a.motivo, etapaId);
-  }
+  /**
+   * Fecha o segmento aberto e abre o seguinte -- ou encerra a sessão, quando
+   * `proximo` é nulo -- numa transação só.
+   *
+   * `immediate()` pega a trava de escrita já na abertura: o Next levanta mais
+   * de um processo, e dois cliques simultâneos na mesma etapa entram aqui em
+   * fila. O segundo relê a sessão, encontra o status já mudado e sai sem
+   * gravar nada, em vez de duplicar o segmento.
+   */
+  async avancarSegmento(
+    etapaId: string,
+    statusEsperado: Status,
+    fimISO: string,
+    proximo: ProximoSegmento | null
+  ): Promise<boolean> {
+    const lerSessao = this.db.prepare("select * from sessoes where etapa_id = ?");
+    // O sequencial sai do próprio banco, dentro do mesmo comando: dois
+    // apontamentos gravados ao mesmo tempo não disputam o número.
+    const gravar = this.db.prepare(
+      `insert into apontamentos
+         (id, numero, etapa_id, numero_os, tipo, inicio, fim, duracao_segundos, justificativa)
+       values (?, (select coalesce(max(numero), 0) + 1 from apontamentos), ?, ?, ?, ?, ?, ?, ?)`
+    );
+    const atualizar = this.db.prepare(
+      "update sessoes set status = ?, segmento_inicio = ?, motivo = ? where etapa_id = ?"
+    );
+    const apagar = this.db.prepare("delete from sessoes where etapa_id = ?");
 
-  async excluirSessao(etapaId: string): Promise<void> {
-    this.db.prepare("delete from sessoes where etapa_id = ?").run(etapaId);
+    const transacao = this.db.transaction((): boolean => {
+      const s = lerSessao.get(etapaId) as Sessao | undefined;
+      if (!s || s.status !== statusEsperado) return false;
+
+      const tipo: Tipo = s.status === "EM_ANDAMENTO" ? "OPERACAO" : "PAUSA";
+      gravar.run(
+        randomUUID(),
+        s.etapa_id,
+        s.numero_os,
+        tipo,
+        s.segmento_inicio,
+        fimISO,
+        diferencaEmSegundos(s.segmento_inicio, fimISO),
+        // Justificativa só existe em segmento de pausa.
+        tipo === "PAUSA" ? s.motivo : null
+      );
+
+      // O próximo segmento começa exatamente onde o anterior terminou.
+      if (proximo) atualizar.run(proximo.status, fimISO, proximo.motivo, etapaId);
+      else apagar.run(etapaId);
+
+      return true;
+    });
+
+    return transacao.immediate();
   }
 
   // ---- apontamentos -----------------------------------------------------
-
-  async inserirApontamento(a: Omit<Apontamento, "id" | "numero">): Promise<void> {
-    // O sequencial sai do próprio banco, dentro do mesmo comando: dois
-    // apontamentos gravados ao mesmo tempo não disputam o número.
-    this.db
-      .prepare(
-        `insert into apontamentos
-           (id, numero, etapa_id, numero_os, tipo, inicio, fim, duracao_segundos, justificativa)
-         values (?, (select coalesce(max(numero), 0) + 1 from apontamentos), ?, ?, ?, ?, ?, ?, ?)`
-      )
-      .run(
-        randomUUID(),
-        a.etapa_id,
-        a.numero_os,
-        a.tipo,
-        a.inicio,
-        a.fim,
-        a.duracao_segundos,
-        a.justificativa
-      );
-  }
 
   async contarApontamentos(): Promise<number> {
     const { total } = this.db.prepare("select count(*) as total from apontamentos").get() as {

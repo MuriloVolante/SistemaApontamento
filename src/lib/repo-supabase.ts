@@ -1,19 +1,23 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { ErroUnicidade } from "./repositorio";
-import type { AlteracaoSessao, Repositorio } from "./repositorio";
+import type { ProximoSegmento, Repositorio } from "./repositorio";
 import type {
-  Apontamento,
   Etapa,
   FiltroConsulta,
   LinhaApontamento,
   Sessao,
   SessaoAtiva,
+  Status,
 } from "./tipos";
 
 /**
- * Implementação para Supabase/Postgres, usada apenas quando
- * NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY estão preenchidas.
- * Sem autenticação: as tabelas têm RLS liberada para o papel anônimo.
+ * Implementação para Supabase/Postgres, usada apenas quando SUPABASE_URL e
+ * SUPABASE_SERVICE_ROLE_KEY estão preenchidas.
+ *
+ * Esta classe só existe no servidor: é carregada por `import()` dentro de
+ * Server Actions e a chave nunca entra no pacote do navegador. As tabelas têm
+ * RLS ligada e nenhuma política, de modo que o papel anônimo — cuja chave
+ * qualquer visitante teria — não lê nem grava nada pela API REST.
  */
 interface RegistroBruto {
   id: string;
@@ -30,6 +34,13 @@ interface RegistroBruto {
 
 const CODIGO_UNICIDADE = "23505";
 
+/**
+ * Quantas linhas pedir por requisição. A API REST do Supabase corta a resposta
+ * em 1000 linhas por padrão e não avisa: sem paginar, passado esse volume os
+ * totais e os relatórios simplesmente sairiam menores, sem erro nenhum.
+ */
+const PAGINA = 1000;
+
 function nomeEtapa(reg: RegistroBruto): string {
   const e = reg.etapas;
   if (!e) return "";
@@ -40,8 +51,8 @@ export class RepositorioSupabase implements Repositorio {
   private db: SupabaseClient;
 
   constructor() {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const chave = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+    const url = process.env.SUPABASE_URL!;
+    const chave = process.env.SUPABASE_SERVICE_ROLE_KEY!;
     this.db = createClient(url, chave, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
@@ -143,22 +154,34 @@ export class RepositorioSupabase implements Repositorio {
     }
   }
 
-  async alterarSessao(etapaId: string, a: AlteracaoSessao): Promise<void> {
-    const { error } = await this.db.from("sessoes").update(a).eq("etapa_id", etapaId);
+  /**
+   * Fecha o segmento aberto e abre o seguinte -- ou encerra a sessão, quando
+   * `proximo` é nulo.
+   *
+   * Uma chamada só, para uma função Postgres que trava a linha da sessão
+   * (`for update`) e faz as duas escritas na mesma transação. Em duas chamadas
+   * separadas, uma queda de rede no meio deixaria o apontamento gravado com a
+   * sessão no estado antigo, e um duplo clique gravaria o segmento duas vezes.
+   */
+  async avancarSegmento(
+    etapaId: string,
+    statusEsperado: Status,
+    fimISO: string,
+    proximo: ProximoSegmento | null
+  ): Promise<boolean> {
+    const { data, error } = await this.db.rpc("avancar_segmento", {
+      p_etapa_id: etapaId,
+      p_status_esperado: statusEsperado,
+      p_fim: fimISO,
+      // Nulo significa finalizar: grava o último segmento e libera a etapa.
+      p_novo_status: proximo?.status ?? null,
+      p_novo_motivo: proximo?.motivo ?? null,
+    });
     if (error) throw new Error(error.message);
-  }
-
-  async excluirSessao(etapaId: string): Promise<void> {
-    const { error } = await this.db.from("sessoes").delete().eq("etapa_id", etapaId);
-    if (error) throw new Error(error.message);
+    return data === true;
   }
 
   // ---- apontamentos -----------------------------------------------------
-
-  async inserirApontamento(a: Omit<Apontamento, "id" | "numero">): Promise<void> {
-    const { error } = await this.db.from("apontamentos").insert(a);
-    if (error) throw new Error(error.message);
-  }
 
   async contarApontamentos(): Promise<number> {
     const { count, error } = await this.db
@@ -168,11 +191,13 @@ export class RepositorioSupabase implements Repositorio {
     return count ?? 0;
   }
 
-  async consultarApontamentos(f: FiltroConsulta): Promise<LinhaApontamento[]> {
+  /** Monta a consulta filtrada. Separado porque a paginação a repete. */
+  private filtrar(f: FiltroConsulta) {
     let q = this.db
       .from("apontamentos")
       .select(
-        "id, numero, etapa_id, numero_os, tipo, inicio, fim, duracao_segundos, justificativa, etapas(nome)"
+        "id, numero, etapa_id, numero_os, tipo, inicio, fim, duracao_segundos, justificativa, etapas(nome)",
+        { count: "exact" }
       )
       .order("inicio", { ascending: true });
 
@@ -183,10 +208,33 @@ export class RepositorioSupabase implements Repositorio {
     if (f.deISO) q = q.gte("inicio", f.deISO);
     if (f.ateISO) q = q.lt("inicio", f.ateISO);
 
-    const { data, error } = await q;
-    if (error) throw new Error(error.message);
+    return q;
+  }
 
-    return ((data ?? []) as unknown as RegistroBruto[]).map((r) => ({
+  async consultarApontamentos(f: FiltroConsulta): Promise<LinhaApontamento[]> {
+    const brutos: RegistroBruto[] = [];
+    let total = Infinity;
+    // Quanto a API devolve de fato por vez. O projeto pode ter um teto menor
+    // que o nosso pedido, e é a primeira resposta que revela qual é.
+    let passo = PAGINA;
+
+    while (brutos.length < total) {
+      const { data, error, count } = await this.filtrar(f).range(
+        brutos.length,
+        brutos.length + passo - 1
+      );
+      if (error) throw new Error(error.message);
+
+      const pagina = (data ?? []) as unknown as RegistroBruto[];
+      if (pagina.length === 0) break;
+
+      // `count` é o tamanho do resultado inteiro, não o da página.
+      if (count !== null) total = count;
+      passo = Math.min(passo, pagina.length);
+      brutos.push(...pagina);
+    }
+
+    return brutos.map((r) => ({
       id: r.id,
       numero: r.numero,
       etapa_id: r.etapa_id,
