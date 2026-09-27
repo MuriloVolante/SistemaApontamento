@@ -80,6 +80,7 @@ export interface Repositorio {
   obterUsuarioPorNome(nome: string): Promise<UsuarioComSenha | null>;
   criarUsuario(nome: string, tipo: TipoAcesso, senhaHash: string): Promise<Usuario>;
   renomearUsuario(id: string, nome: string): Promise<void>;
+  definirTipoUsuario(id: string, tipo: TipoAcesso): Promise<void>;
   definirAtivoUsuario(id: string, ativo: boolean): Promise<void>;
   /** Troca a senha e diz se ela volta a ser provisória (reset) ou não (troca). */
   definirSenhaUsuario(id: string, senhaHash: string, primeiroLogin: boolean): Promise<void>;

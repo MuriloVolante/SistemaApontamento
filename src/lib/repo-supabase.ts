@@ -305,6 +305,11 @@ export class RepositorioSupabase implements Repositorio {
     }
   }
 
+  async definirTipoUsuario(id: string, tipo: TipoAcesso): Promise<void> {
+    const { error } = await this.db.from("usuarios").update({ tipo }).eq("id", id);
+    if (error) throw new Error(error.message);
+  }
+
   async definirAtivoUsuario(id: string, ativo: boolean): Promise<void> {
     const { error } = await this.db.from("usuarios").update({ ativo }).eq("id", id);
     if (error) throw new Error(error.message);

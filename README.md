@@ -324,10 +324,15 @@ A tela de apontamento **não tem login** — é a primeira regra do sistema, e
 ninguém vai digitar senha para apertar Iniciar no meio do turno. O login existe
 só para o painel de gestão.
 
+A tela do vendedor é a mesma rota do dashboard, montada de outro jeito: barra
+de busca, o cartão da situação da OS e as etapas por onde ela passou. Sem
+totais do dia, sem cronômetro e sem a coluna de duração — o acesso dele é para
+responder ao cliente que ligou, não para medir produção.
+
 | Perfil | O que vê |
 |---|---|
 | **Gestor** | Tudo: dashboard, histórico, relatórios, etapas e usuários |
-| **Vendedor** | Só o dashboard, para saber em que máquina está o material do cliente |
+| **Vendedor** | Só a consulta de OS: onde ela está agora e por onde já passou |
 
 ### Primeiro acesso
 

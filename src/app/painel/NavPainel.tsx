@@ -7,6 +7,7 @@ import { sair } from "../acesso";
 import Icone from "@/components/Icone";
 import Transicao from "@/components/Transicao";
 import useTituloJanela from "@/components/useTituloJanela";
+import { ProvedorUsuario } from "./ContextoUsuario";
 import type { SessaoUsuario } from "@/lib/tipos";
 
 /** O vendedor só tem a primeira; o gestor tem todas. */
@@ -29,7 +30,12 @@ export default function NavPainel({ usuario, children }: Props) {
   const router = useRouter();
 
   const gestor = usuario.tipo === "GESTOR";
-  const paginas = PAGINAS.filter((p) => gestor || !p.sóGestor);
+
+  // Para o vendedor a mesma tela é outra coisa: ele não vê painel do dia
+  // nenhum, vê a consulta. O rótulo acompanha o que a tela realmente mostra.
+  const paginas = PAGINAS.filter((p) => gestor || !p.sóGestor).map((p) =>
+    !gestor && p.href === "/painel" ? { ...p, rotulo: "Consulta de OS" } : p
+  );
 
   /**
    * Vendedor que chegue a outra tela pela URL volta ao dashboard.
@@ -140,7 +146,9 @@ export default function NavPainel({ usuario, children }: Props) {
       </nav>
 
       <main className="painel">
-        <Transicao ordem={ORDEM}>{children}</Transicao>
+        <Transicao ordem={ORDEM}>
+          <ProvedorUsuario usuario={usuario}>{children}</ProvedorUsuario>
+        </Transicao>
       </main>
     </>
   );

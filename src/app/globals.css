@@ -1612,6 +1612,19 @@ table.tabela tbody tr:last-child td {
   padding: 9px 11px;
 }
 
+/* Coluna numérica: o rótulo acompanha o número, que é alinhado à direita. */
+.cabecalho-simples--num {
+  text-align: right;
+}
+
+/* Marca discreta da própria linha: informação de canto, não etiqueta. */
+.marca-voce {
+  margin-left: 6px;
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: var(--tinta-fraca);
+}
+
 /* ---------------------------------------------------------------------
    Histórico — filtros na lateral
    --------------------------------------------------------------------- */

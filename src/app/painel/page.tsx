@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { listarSessoesAtivas } from "../actions";
 import { totaisDoPeriodo } from "../consultas";
 import CardsTotais from "./Totais";
+import { useUsuario } from "./ContextoUsuario";
 import BuscaOs from "./BuscaOs";
 import Icone from "@/components/Icone";
 import {
@@ -34,6 +35,10 @@ const QUEDAS_ATE_DESISTIR = 4;
 const JANELA_DE_QUEDAS = 120_000;
 
 export default function Dashboard() {
+  // O vendedor entra aqui para uma coisa só: saber onde está a OS do cliente.
+  // Nada de totais do dia nem de cronômetros — só a busca e o que ela responde.
+  const consultaApenas = useUsuario().tipo === "VENDEDOR";
+
   const [sessoes, setSessoes] = useState<SessaoAtiva[]>([]);
   const [totais, setTotais] = useState<Totais>(TOTAIS_ZERADOS);
   const [carregando, setCarregando] = useState(true);
@@ -57,9 +62,10 @@ export default function Dashboard() {
    * fica aqui e não no servidor.
    */
   const carregarTotais = useCallback(async () => {
+    if (consultaApenas) return;
     const { deISO, ateISO } = limitesLocais(hoje, hoje);
     setTotais(await totaisDoPeriodo(deISO, ateISO));
-  }, [hoje]);
+  }, [hoje, consultaApenas]);
 
   const aplicar = useCallback(
     (dados: AtualizacaoAoVivo) => {
@@ -153,7 +159,7 @@ export default function Dashboard() {
   return (
     <>
       <div className="painel-topo">
-        <h1 className="painel-titulo">Dashboard</h1>
+        <h1 className="painel-titulo">{consultaApenas ? "Consulta de OS" : "Dashboard"}</h1>
         {/* Estado da conexão só aparece quando há o que avisar. */}
         {!aoVivo && <span className="reconectando">Reconectando…</span>}
       </div>
@@ -163,12 +169,13 @@ export default function Dashboard() {
         agoraCorrigido={agoraCorrigido}
         revisao={revisao}
         aoMudarBusca={setBuscaAtiva}
+        consultaApenas={consultaApenas}
       />
 
       {erro && <p className="erro">{erro}</p>}
 
       {/* Durante a busca o painel do dia sai de cena para não competir. */}
-      {!buscaAtiva && (
+      {!buscaAtiva && !consultaApenas && (
         <>
           <CardsTotais totais={totais} />
 

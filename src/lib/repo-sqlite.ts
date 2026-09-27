@@ -473,6 +473,10 @@ export class RepositorioSqlite implements Repositorio {
     }
   }
 
+  async definirTipoUsuario(id: string, tipo: TipoAcesso): Promise<void> {
+    this.db.prepare("update usuarios set tipo = ? where id = ?").run(tipo, id);
+  }
+
   async definirAtivoUsuario(id: string, ativo: boolean): Promise<void> {
     this.db.prepare("update usuarios set ativo = ? where id = ?").run(ativo ? 1 : 0, id);
   }

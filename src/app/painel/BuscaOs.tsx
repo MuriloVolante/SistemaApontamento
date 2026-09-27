@@ -16,9 +16,21 @@ interface Props {
   revisao: number | null;
   /** Avisa o dashboard para recolher o conteúdo normal durante a busca. */
   aoMudarBusca: (ativa: boolean) => void;
+  /**
+   * Modo do vendedor: onde a OS está e por onde passou, sem nada de tempo.
+   * Sem os totais, sem a coluna de duração e sem o cronômetro do cartão — o
+   * acesso dele é para consultar a OS, não para medir produção.
+   */
+  consultaApenas?: boolean;
 }
 
-export default function BuscaOs({ sessoesAoVivo, agoraCorrigido, revisao, aoMudarBusca }: Props) {
+export default function BuscaOs({
+  sessoesAoVivo,
+  agoraCorrigido,
+  revisao,
+  aoMudarBusca,
+  consultaApenas = false,
+}: Props) {
   const [texto, setTexto] = useState("");
   const [buscada, setBuscada] = useState("");
   const [resultado, setResultado] = useState<ResultadoBuscaOs | null>(null);
@@ -64,6 +76,18 @@ export default function BuscaOs({ sessoesAoVivo, agoraCorrigido, revisao, aoMuda
     setResultado(null);
     setErro(null);
   }
+
+  const colunas = [
+    { rotulo: "#", numerica: true },
+    { rotulo: "Etapa" },
+    { rotulo: "Tipo" },
+    { rotulo: "Data" },
+    { rotulo: "Hora Início", numerica: true },
+    { rotulo: "Hora Fim", numerica: true },
+    ...(consultaApenas
+      ? []
+      : [{ rotulo: "Tempo Total", numerica: true }, { rotulo: "Justificativa" }]),
+  ];
 
   // A situação vem do fluxo ao vivo, então o cronômetro corre sem reconsultar.
   const emCurso = buscada ? sessoesAoVivo.find((s) => s.numero_os === buscada) ?? null : null;
@@ -141,14 +165,14 @@ export default function BuscaOs({ sessoesAoVivo, agoraCorrigido, revisao, aoMuda
               )}
             </div>
 
-            {emCurso && (
+            {emCurso && !consultaApenas && (
               <div className="situacao-os-cronometro">
                 {formatarDuracao(diferencaEmSegundos(emCurso.segmento_inicio, agoraCorrigido()))}
               </div>
             )}
           </article>
 
-          <CardsTotais totais={resultado.totais} />
+          {!consultaApenas && <CardsTotais totais={resultado.totais} />}
 
           <div className="cartao">
             <h2 className="cartao-titulo">Histórico da OS · {resultado.linhas.length} registros</h2>
@@ -160,30 +184,20 @@ export default function BuscaOs({ sessoesAoVivo, agoraCorrigido, revisao, aoMuda
                 <table className="tabela">
                   <thead>
                     <tr>
-                      <th>
-                        <span className="cabecalho-simples">#</span>
-                      </th>
-                      <th>
-                        <span className="cabecalho-simples">Etapa</span>
-                      </th>
-                      <th>
-                        <span className="cabecalho-simples">Tipo</span>
-                      </th>
-                      <th>
-                        <span className="cabecalho-simples">Data</span>
-                      </th>
-                      <th>
-                        <span className="cabecalho-simples">Hora Início</span>
-                      </th>
-                      <th>
-                        <span className="cabecalho-simples">Hora Fim</span>
-                      </th>
-                      <th>
-                        <span className="cabecalho-simples">Tempo Total</span>
-                      </th>
-                      <th>
-                        <span className="cabecalho-simples">Justificativa</span>
-                      </th>
+                      {colunas.map((c) => (
+                        <th key={c.rotulo}>
+                          {/* Cabeçalho de coluna numérica encosta à direita,
+                              junto com o número: alinhamentos opostos na mesma
+                              coluna é o que fazia a tabela parecer torta. */}
+                          <span
+                            className={`cabecalho-simples ${
+                              c.numerica ? "cabecalho-simples--num" : ""
+                            }`}
+                          >
+                            {c.rotulo}
+                          </span>
+                        </th>
+                      ))}
                     </tr>
                   </thead>
                   <tbody>
@@ -203,8 +217,12 @@ export default function BuscaOs({ sessoesAoVivo, agoraCorrigido, revisao, aoMuda
                         <td>{formatarData(l.inicio)}</td>
                         <td className="col-num">{formatarHora(l.inicio)}</td>
                         <td className="col-num">{formatarHora(l.fim)}</td>
-                        <td className="col-num">{formatarDuracao(l.duracao_segundos)}</td>
-                        <td className="col-justificativa">{l.justificativa ?? ""}</td>
+                        {!consultaApenas && (
+                          <>
+                            <td className="col-num">{formatarDuracao(l.duracao_segundos)}</td>
+                            <td className="col-justificativa">{l.justificativa ?? ""}</td>
+                          </>
+                        )}
                       </tr>
                     ))}
                   </tbody>

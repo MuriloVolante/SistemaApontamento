@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Modal from "@/components/Modal";
 import MenuAcoes from "./MenuAcoes";
 import {
   criarUsuario,
   definirAtivoUsuario,
+  definirTipoUsuario,
   excluirUsuario,
   listarUsuarios,
   meuId,
@@ -20,9 +21,29 @@ const ROTULO_TIPO: Record<TipoAcesso, string> = {
   VENDEDOR: "Vendedor",
 };
 
+/** Em que ordem a situação aparece quando se ordena por ela. */
+function pesoSituacao(u: Usuario): number {
+  if (!u.ativo) return 2;
+  return u.primeiro_login ? 1 : 0;
+}
+
+type Coluna = "nome" | "tipo" | "situacao";
+
+const COLUNAS: Array<{
+  chave: Coluna;
+  rotulo: string;
+  numerica?: boolean;
+  valor: (u: Usuario) => string | number;
+}> = [
+  { chave: "nome", rotulo: "Usuário", valor: (u) => u.nome },
+  { chave: "tipo", rotulo: "Tipo de acesso", valor: (u) => ROTULO_TIPO[u.tipo] },
+  { chave: "situacao", rotulo: "Situação", numerica: true, valor: pesoSituacao },
+];
+
 /** Diálogo aberto no momento, com o usuário a que ele se refere. */
 type Dialogo =
   | { qual: "RENOMEAR"; usuario: Usuario }
+  | { qual: "PERFIL"; usuario: Usuario }
   | { qual: "RESETAR"; usuario: Usuario }
   | { qual: "EXCLUIR"; usuario: Usuario }
   | null;
@@ -39,6 +60,10 @@ export default function TelaUsuarios() {
 
   const [dialogo, setDialogo] = useState<Dialogo>(null);
   const [nomeEditado, setNomeEditado] = useState("");
+  const [tipoEditado, setTipoEditado] = useState<TipoAcesso>("VENDEDOR");
+
+  const [coluna, setColuna] = useState<Coluna>("nome");
+  const [direcao, setDirecao] = useState<"asc" | "desc">("asc");
 
   const carregar = useCallback(() => {
     listarUsuarios()
@@ -79,6 +104,37 @@ export default function TelaUsuarios() {
     }
   }
 
+  // Mesma ordenação do histórico: clicar no cabeçalho ordena, clicar de novo
+  // inverte, e o empate cai no nome para a lista não dançar.
+  const visiveis = useMemo(() => {
+    const definicao = COLUNAS.find((c) => c.chave === coluna)!;
+    const sinal = direcao === "asc" ? 1 : -1;
+
+    return [...usuarios].sort((a, b) => {
+      const va = definicao.valor(a);
+      const vb = definicao.valor(b);
+      const comparacao = definicao.numerica
+        ? (va as number) - (vb as number)
+        : String(va).localeCompare(String(vb), "pt-BR", { numeric: true, sensitivity: "base" });
+
+      return comparacao !== 0
+        ? comparacao * sinal
+        : a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" });
+    });
+  }, [usuarios, coluna, direcao]);
+
+  function ordenarPor(nova: Coluna) {
+    if (nova === coluna) setDirecao((d) => (d === "asc" ? "desc" : "asc"));
+    else {
+      setColuna(nova);
+      setDirecao("asc");
+    }
+  }
+
+  async function confirmarPerfil(u: Usuario) {
+    if (await executar(() => definirTipoUsuario(u.id, tipoEditado))) setDialogo(null);
+  }
+
   async function confirmarRenomear(u: Usuario) {
     if (await executar(() => renomearUsuario(u.id, nomeEditado))) setDialogo(null);
   }
@@ -99,7 +155,7 @@ export default function TelaUsuarios() {
       <div className="painel-topo">
         <h1 className="painel-titulo">Usuários</h1>
         <span className="painel-legenda">
-          Gestor vê o painel inteiro; vendedor vê só o dashboard
+          Gestor: faz tudo | Vendedor: consulta OS
         </span>
       </div>
 
@@ -160,18 +216,38 @@ export default function TelaUsuarios() {
             <table className="tabela">
               <thead>
                 <tr>
-                  <th>Usuário</th>
-                  <th>Tipo de acesso</th>
-                  <th>Situação</th>
-                  <th className="coluna-acoes">Ações</th>
+                  {COLUNAS.map((c) => {
+                    const ativa = c.chave === coluna;
+                    return (
+                      <th
+                        key={c.chave}
+                        aria-sort={ativa ? (direcao === "asc" ? "ascending" : "descending") : "none"}
+                      >
+                        <button
+                          type="button"
+                          className={`ordenar ${ativa ? "ordenar--ativa" : ""}`}
+                          onClick={() => ordenarPor(c.chave)}
+                          title={`Ordenar por ${c.rotulo}`}
+                        >
+                          {c.rotulo}
+                          <span className="ordenar-seta" aria-hidden="true">
+                            {ativa ? (direcao === "asc" ? "↓" : "↑") : "↕"}
+                          </span>
+                        </button>
+                      </th>
+                    );
+                  })}
+                  <th className="coluna-acoes">
+                    <span className="cabecalho-simples">Ações</span>
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                {usuarios.map((u) => (
+                {visiveis.map((u) => (
                   <tr key={u.id}>
                     <td>
                       {u.nome}
-                      {u.id === euSou && <span className="etiqueta">você</span>}
+                      {u.id === euSou && <span className="marca-voce">(você)</span>}
                     </td>
                     <td>{ROTULO_TIPO[u.tipo]}</td>
                     <td>
@@ -202,6 +278,18 @@ export default function TelaUsuarios() {
                             aoEscolher: () => {
                               setNomeEditado(u.nome);
                               setDialogo({ qual: "RENOMEAR", usuario: u });
+                            },
+                          },
+                          {
+                            rotulo: "Perfil de acesso",
+                            icone: "cracha",
+                            impedida:
+                              u.id === euSou
+                                ? "Você não pode mudar o seu próprio perfil"
+                                : undefined,
+                            aoEscolher: () => {
+                              setTipoEditado(u.tipo);
+                              setDialogo({ qual: "PERFIL", usuario: u });
                             },
                           },
                           {
@@ -258,6 +346,48 @@ export default function TelaUsuarios() {
               className="botao"
               onClick={() => confirmarRenomear(dialogo.usuario)}
               disabled={ocupado || !nomeEditado.trim()}
+            >
+              Salvar
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {dialogo?.qual === "PERFIL" && (
+        <Modal
+          titulo={`Perfil de acesso de ${dialogo.usuario.nome}`}
+          aoFechar={() => setDialogo(null)}
+        >
+          <label className="campo-rotulo" htmlFor="perfil-tipo">
+            Tipo de acesso
+          </label>
+          <select
+            id="perfil-tipo"
+            className="campo"
+            autoFocus
+            value={tipoEditado}
+            onChange={(e) => setTipoEditado(e.target.value as TipoAcesso)}
+          >
+            <option value="VENDEDOR">Vendedor — consulta OS</option>
+            <option value="GESTOR">Gestor — faz tudo</option>
+          </select>
+
+          {erro && <p className="erro">{erro}</p>}
+
+          <div className="modal-acoes">
+            <button
+              type="button"
+              className="botao botao--neutro"
+              onClick={() => setDialogo(null)}
+              disabled={ocupado}
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              className="botao"
+              onClick={() => confirmarPerfil(dialogo.usuario)}
+              disabled={ocupado || tipoEditado === dialogo.usuario.tipo}
             >
               Salvar
             </button>

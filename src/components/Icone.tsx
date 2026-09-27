@@ -47,10 +47,20 @@ const DESENHOS = {
       <circle cx="12" cy="7.8" r="0.85" fill="currentColor" stroke="none" />
     </>
   ),
+  /* Dentes de topo chato, gerados sobre a grade de 24: uma estrela de oito
+     pontas -- que era o desenho anterior -- lê como explosão, não como peça. */
   engrenagem: (
     <>
-      <circle cx="12" cy="12" r="3.1" />
-      <path d="M12 2.8l1.5 2.2 2.6-.5.5 2.6 2.2 1.5-1.3 2.3 1.3 2.3-2.2 1.5-.5 2.6-2.6-.5L12 21.2l-1.5-2.2-2.6.5-.5-2.6-2.2-1.5 1.3-2.3-1.3-2.3 2.2-1.5.5-2.6 2.6.5L12 2.8Z" />
+      <circle cx="12" cy="12" r="3.2" />
+      <path d="M10.57 4.64L10.09 2.18L13.91 2.18L13.43 4.64L16.19 5.78L17.59 3.71L20.29 6.41L18.22 7.81L19.36 10.57L21.82 10.09L21.82 13.91L19.36 13.43L18.22 16.19L20.29 17.59L17.59 20.29L16.19 18.22L13.43 19.36L13.91 21.82L10.09 21.82L10.57 19.36L7.81 18.22L6.41 20.29L3.71 17.59L5.78 16.19L4.64 13.43L2.18 13.91L2.18 10.09L4.64 10.57L5.78 7.81L3.71 6.41L6.41 3.71L7.81 5.78Z" />
+    </>
+  ),
+  /* Perfil de acesso: um crachá. */
+  cracha: (
+    <>
+      <rect x="3.4" y="5.6" width="17.2" height="13.4" rx="2.2" />
+      <circle cx="9" cy="11.4" r="2.1" />
+      <path d="M5.9 16.4a3.6 3.6 0 0 1 6.2 0M14.8 10.6h3.6M14.8 14h2.4" />
     </>
   ),
   usuario: (

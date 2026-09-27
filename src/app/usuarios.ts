@@ -50,6 +50,27 @@ export async function renomearUsuario(id: string, nome: string): Promise<Resulta
   }
 }
 
+export async function definirTipoUsuario(id: string, tipo: TipoAcesso): Promise<Resultado> {
+  const gestor = await exigirGestor();
+
+  if (tipo !== "GESTOR" && tipo !== "VENDEDOR") return { ok: false, erro: "Escolha o tipo de acesso." };
+
+  // Rebaixar a si mesmo tira o acesso a esta própria tela, no meio do clique.
+  if (tipo === "VENDEDOR" && id === gestor.id) {
+    return { ok: false, erro: "Você não pode mudar o seu próprio perfil de acesso." };
+  }
+  if (tipo === "VENDEDOR" && (await semOutroGestorAtivo(id))) {
+    return { ok: false, erro: "Este é o único gestor ativo. Promova outro antes de rebaixá-lo." };
+  }
+
+  try {
+    await (await repositorio()).definirTipoUsuario(id, tipo);
+    return { ok: true, dados: null };
+  } catch (e) {
+    return { ok: false, erro: (e as Error).message };
+  }
+}
+
 export async function definirAtivoUsuario(id: string, ativo: boolean): Promise<Resultado> {
   const gestor = await exigirGestor();
 
