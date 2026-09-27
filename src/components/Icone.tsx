@@ -7,6 +7,7 @@
  */
 const DESENHOS = {
   setaEsquerda: <path d="M21 12H3m6-6-6 6 6 6" />,
+  menu: <path d="M4 7h16M4 12h16M4 17h16" />,
   lupa: (
     <>
       <circle cx="11" cy="11" r="6.5" />

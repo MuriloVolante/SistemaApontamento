@@ -166,8 +166,9 @@ sem dependência, sem CDN e sem peso perceptível no pacote.
 
 **Escala fluida.** Espaçamentos e tamanhos de texto usam `clamp()`, então a
 interface acompanha de um celular a um monitor grande sem quebras e sem
-pontos de virada bruscos. As abas do painel rolam na horizontal e a tabela rola
-dentro da própria moldura.
+pontos de virada bruscos. No celular (até 760 px) as abas do painel viram um
+menu de três linhas, que abre a lista das telas com a atual destacada; a
+tabela rola dentro da própria moldura.
 
 **Movimento.** Curto e discreto, de 110 ms a 300 ms, sempre com saída suave.
 Entrada de tela ao trocar de página, modal que cresce do centro, elevação leve

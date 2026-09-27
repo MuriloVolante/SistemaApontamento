@@ -698,6 +698,58 @@ textarea {
   opacity: 1;
 }
 
+/* Menu de três linhas: fica escondido e só entra no celular, no lugar das
+   abas. */
+.navbar-menu-ancora {
+  position: relative;
+  display: none;
+}
+
+.navbar-menu {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  color: #e3eaf0;
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: var(--raio);
+  cursor: pointer;
+  transition: background var(--rapido), border-color var(--rapido), color var(--rapido);
+}
+
+.navbar-menu:hover,
+.navbar-menu[aria-expanded="true"] {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.38);
+}
+
+/* A lista é a mesma dos menus de ação, presa embaixo do botão. As duas
+   classes juntas porque `.menu-lista`, que é `fixed`, vem depois no arquivo. */
+.menu-lista.navbar-menu-lista {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 210px;
+}
+
+.navbar-menu-lista .menu-item {
+  padding: 11px 12px;
+  font-size: 0.95rem;
+  text-decoration: none;
+}
+
+/* A tela em que se está, destacada. Duas classes pelo mesmo motivo da lista:
+   a regra geral de `.menu-item` vem depois. */
+.menu-item.menu-item--atual,
+.menu-item.menu-item--atual:hover {
+  color: var(--acento);
+  background: var(--acento-tenue);
+  font-weight: 600;
+}
+
 /* Um sublinhado só para todas as abas: em vez de sumir de uma e aparecer na
    outra, ele escorrega e se estica até a nova posição. */
 .navbar-marca {
@@ -2284,6 +2336,7 @@ table.tabela tbody tr:last-child td {
     padding: 0 calc(var(--respiro) + 76px) 0 var(--respiro);
   }
 
+
   .novo-usuario-campo--estreito {
     flex: 1 1 100%;
   }
@@ -2561,6 +2614,23 @@ table.tabela tbody tr:last-child td {
   .painel {
     padding-bottom: 88px;
   }
+
+  /* No celular, em pé ou deitado, os nomes das telas não cabem ao lado da
+     conta e encostavam nela: viram o menu de três linhas, à esquerda, no
+     lugar do logotipo. */
+  .navbar-interna {
+    justify-content: flex-start;
+    padding-left: var(--respiro);
+  }
+
+  .navbar-logo,
+  .navbar-itens {
+    display: none;
+  }
+
+  .navbar-menu-ancora {
+    display: block;
+  }
 }
 
 @media (max-width: 640px) {
@@ -2577,14 +2647,7 @@ table.tabela tbody tr:last-child td {
     flex: 1 1 140px;
   }
 
-  .navbar-interna {
-    justify-content: flex-start;
-    padding-left: var(--respiro);
-  }
-
-  /* Na tela estreita as abas encostam à esquerda e o espaço é delas; no
-     operador, o espaço é do nome da etapa. */
-  .navbar-logo,
+  /* No operador, o espaço da tela estreita é do nome da etapa. */
   .op-marca {
     display: none;
   }
