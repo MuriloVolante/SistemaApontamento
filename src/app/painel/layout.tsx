@@ -1,103 +1,25 @@
-"use client";
+import { redirect } from "next/navigation";
+import { lerSessao } from "@/lib/sessao";
+import NavPainel from "./NavPainel";
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import Icone from "@/components/Icone";
-import Transicao from "@/components/Transicao";
-import useTituloJanela from "@/components/useTituloJanela";
-
-const PAGINAS = [
-  { href: "/painel", rotulo: "Dashboard" },
-  { href: "/painel/historico", rotulo: "Histórico" },
-  { href: "/painel/etapas", rotulo: "Etapas" },
-];
-
-const ORDEM = PAGINAS.map((p) => p.href);
-
-export default function LayoutPainel({ children }: { children: React.ReactNode }) {
-  const caminho = usePathname();
-
-  // "/painel" só fica ativo na raiz; as demais, no seu prefixo.
-  const ativo =
-    PAGINAS.find((p) => (p.href === "/painel" ? caminho === p.href : caminho.startsWith(p.href)))
-      ?.href ?? "/painel";
-
-  useTituloJanela(PAGINAS.find((p) => p.href === ativo)?.rotulo);
-
-  const lista = useRef<HTMLUListElement>(null);
-  const abas = useRef<Record<string, HTMLAnchorElement | null>>({});
-  const [marca, setMarca] = useState({ x: 0, largura: 0, pronta: false });
-
-  /**
-   * O sublinhado é um elemento só, que escorrega e se estica de uma aba até a
-   * outra em vez de aparecer e sumir. É o que dá a sensação de continuidade
-   * entre as telas.
-   */
-  const medir = useCallback(() => {
-    const aba = abas.current[ativo];
-    const caixa = lista.current;
-    if (!aba || !caixa) return;
-
-    setMarca({
-      x: aba.offsetLeft - caixa.scrollLeft,
-      largura: aba.offsetWidth,
-      pronta: true,
-    });
-  }, [ativo]);
-
-  useLayoutEffect(medir, [medir]);
-
-  useEffect(() => {
-    const caixa = lista.current;
-    window.addEventListener("resize", medir);
-    caixa?.addEventListener("scroll", medir, { passive: true });
-    return () => {
-      window.removeEventListener("resize", medir);
-      caixa?.removeEventListener("scroll", medir);
-    };
-  }, [medir]);
+/**
+ * Porta do painel de gestão.
+ *
+ * Roda no servidor: a sessão é conferida antes de a tela existir, então o
+ * navegador nunca chega a receber o conteúdo de quem não entrou. Quem está com
+ * a senha ainda provisória volta ao login, porque a sessão dele só serve para
+ * definir a senha.
+ *
+ * A tela de apontamento fica de fora disto de propósito: ela continua sem
+ * login, como manda a primeira regra do sistema.
+ */
+export default async function LayoutPainel({ children }: { children: React.ReactNode }) {
+  const sessao = await lerSessao();
+  if (!sessao || sessao.trocar) redirect("/login");
 
   return (
-    <>
-      <nav className="navbar">
-        <div className="navbar-interna">
-          <ul className="navbar-itens" ref={lista}>
-            {PAGINAS.map((p) => (
-              <li key={p.href}>
-                <Link
-                  href={p.href}
-                  ref={(el) => {
-                    abas.current[p.href] = el;
-                  }}
-                  className={`navbar-link ${p.href === ativo ? "navbar-link--ativo" : ""}`}
-                >
-                  {p.rotulo}
-                </Link>
-              </li>
-            ))}
-
-            <span
-              className={`navbar-marca ${marca.pronta ? "navbar-marca--pronta" : ""}`}
-              style={{ transform: `translateX(${marca.x}px)`, width: marca.largura }}
-              aria-hidden="true"
-            />
-          </ul>
-
-          <Link
-            href="/"
-            className="navbar-saida"
-            title="Tela de apontamento"
-            aria-label="Ir para a tela de apontamento"
-          >
-            <Icone nome="setaEsquerda" tamanho={19} />
-          </Link>
-        </div>
-      </nav>
-
-      <main className="painel">
-        <Transicao ordem={ORDEM}>{children}</Transicao>
-      </main>
-    </>
+    <NavPainel usuario={{ id: sessao.id, nome: sessao.nome, tipo: sessao.tipo }}>
+      {children}
+    </NavPainel>
   );
 }

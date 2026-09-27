@@ -72,6 +72,39 @@ export type Resultado<T = null> =
  * (ISO) pelo navegador, para que o dia filtrado seja o dia local do usuário
  * e não o do servidor.
  */
+/**
+ * Perfis de acesso ao painel.
+ *
+ * GESTOR vê tudo: dashboard, histórico, relatórios, etapas e usuários.
+ * VENDEDOR vê só o dashboard — é onde ele descobre em que máquina está o
+ * material do cliente que acabou de ligar.
+ *
+ * A tela de apontamento não entra nisto: continua sem login, como manda a
+ * primeira regra do sistema.
+ */
+export type TipoAcesso = "GESTOR" | "VENDEDOR";
+
+export interface Usuario {
+  id: string;
+  nome: string;
+  tipo: TipoAcesso;
+  ativo: boolean;
+  /** Ainda com a senha padrão: o próximo login obriga a trocá-la. */
+  primeiro_login: boolean;
+}
+
+/** O mesmo usuário com o que nunca sai do servidor. */
+export interface UsuarioComSenha extends Usuario {
+  senha_hash: string;
+}
+
+/** Quem está usando o painel, do ponto de vista do servidor. */
+export interface SessaoUsuario {
+  id: string;
+  nome: string;
+  tipo: TipoAcesso;
+}
+
 export interface FiltroConsulta {
   /** Busca parcial, usada pelos filtros do histórico. */
   os?: string;

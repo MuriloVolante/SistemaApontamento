@@ -318,6 +318,56 @@ Então o acesso é só pelo servidor. As variáveis não levam o prefixo
 `anon`, e todo o tráfego passa pelas server actions. Nenhuma linha do código do
 navegador fala com o Supabase.
 
+## Acesso ao painel
+
+A tela de apontamento **não tem login** — é a primeira regra do sistema, e
+ninguém vai digitar senha para apertar Iniciar no meio do turno. O login existe
+só para o painel de gestão.
+
+| Perfil | O que vê |
+|---|---|
+| **Gestor** | Tudo: dashboard, histórico, relatórios, etapas e usuários |
+| **Vendedor** | Só o dashboard, para saber em que máquina está o material do cliente |
+
+### Primeiro acesso
+
+Num banco sem nenhum usuário, o sistema cria um gestor na primeira tentativa de
+login:
+
+```
+usuário: gestor
+senha:   senha12345
+```
+
+Ele entra já no formulário de troca de senha — a senha padrão não sobrevive ao
+primeiro uso. Depois disso, cadastre as pessoas em **Painel → Usuários**.
+
+### Como funcionam as senhas
+
+Todo usuário nasce com `senha12345` e com a troca obrigatória ligada; quem
+entra com ela é levado direto para "Crie a sua senha", com confirmação e
+mínimo de seis caracteres. **Resetar senha** devolve a senha padrão e religa a
+troca obrigatória — serve para quem esqueceu a própria.
+
+As senhas são guardadas com `scrypt` e sal por senha, nunca em texto. Quem
+abrisse o arquivo do banco não leria nenhuma.
+
+### Onde o acesso é conferido
+
+Esconder uma aba não protege nada: a ação continuaria alcançável por quem
+soubesse chamá-la. Então a conferência é do servidor — cada ação verifica o
+perfil antes de devolver qualquer dado, e verifica **no banco**, não no cookie,
+de modo que inativar, excluir ou mudar o perfil de alguém vale na hora, sem
+esperar a sessão vencer.
+
+O cookie de sessão é assinado com uma chave sorteada na primeira execução e
+guardada no banco: nada a configurar, e ninguém cai quando o servidor
+reinicia. Ele não é marcado como `secure` de propósito — a gráfica acessa o
+painel por http, no endereço da máquina na rede local, e um cookie `secure`
+simplesmente nunca seria enviado.
+
+---
+
 ### Depois de atualizar o sistema
 
 O navegador guarda a tela que carregou. Se uma aba ficou aberta durante a

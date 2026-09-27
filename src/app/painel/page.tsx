@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { listarSessoesAtivas } from "../actions";
-import { consultarApontamentos } from "../consultas";
+import { totaisDoPeriodo } from "../consultas";
 import CardsTotais from "./Totais";
 import BuscaOs from "./BuscaOs";
 import Icone from "@/components/Icone";
@@ -58,8 +58,7 @@ export default function Dashboard() {
    */
   const carregarTotais = useCallback(async () => {
     const { deISO, ateISO } = limitesLocais(hoje, hoje);
-    const { totais: t } = await consultarApontamentos({ deISO, ateISO });
-    setTotais(t);
+    setTotais(await totaisDoPeriodo(deISO, ateISO));
   }, [hoje]);
 
   const aplicar = useCallback(

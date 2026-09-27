@@ -1,4 +1,5 @@
 import { assinar } from "@/lib/transmissor";
+import { lerSessao } from "@/lib/sessao";
 
 /** Fluxo aberto: precisa rodar em Node, sem cache e sem pré-renderização. */
 export const runtime = "nodejs";
@@ -13,6 +14,13 @@ const INTERVALO_BATIMENTO = 25_000;
  * atualizar a página na mão. O EventSource reconecta sozinho se a conexão cair.
  */
 export async function GET(requisicao: Request): Promise<Response> {
+  // O fluxo carrega o que está rodando em todas as máquinas: é dado do
+  // painel, e painel exige sessão. Sem ela, nem abre.
+  const sessao = await lerSessao();
+  if (!sessao || sessao.trocar) {
+    return new Response("Sem sessão.", { status: 401 });
+  }
+
   const codificador = new TextEncoder();
 
   const fluxo = new ReadableStream<Uint8Array>({

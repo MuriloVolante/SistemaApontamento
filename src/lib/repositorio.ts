@@ -5,6 +5,9 @@ import type {
   Sessao,
   SessaoAtiva,
   Status,
+  TipoAcesso,
+  Usuario,
+  UsuarioComSenha,
 } from "./tipos";
 
 /** Violação de chave única (nome de etapa repetido, sessão duplicada na etapa). */
@@ -68,6 +71,25 @@ export interface Repositorio {
    *  revisão barato para detectar mudanças sem reler a tabela inteira. */
   contarApontamentos(): Promise<number>;
   consultarApontamentos(filtro: FiltroConsulta): Promise<LinhaApontamento[]>;
+
+  // ---- usuários do painel ------------------------------------------------
+
+  listarUsuarios(): Promise<Usuario[]>;
+  obterUsuario(id: string): Promise<Usuario | null>;
+  /** Só este devolve o hash da senha; é usado apenas na conferência do login. */
+  obterUsuarioPorNome(nome: string): Promise<UsuarioComSenha | null>;
+  criarUsuario(nome: string, tipo: TipoAcesso, senhaHash: string): Promise<Usuario>;
+  renomearUsuario(id: string, nome: string): Promise<void>;
+  definirAtivoUsuario(id: string, ativo: boolean): Promise<void>;
+  /** Troca a senha e diz se ela volta a ser provisória (reset) ou não (troca). */
+  definirSenhaUsuario(id: string, senhaHash: string, primeiroLogin: boolean): Promise<void>;
+  excluirUsuario(id: string): Promise<void>;
+
+  // ---- configuração do próprio sistema -----------------------------------
+
+  obterConfiguracao(chave: string): Promise<string | null>;
+  /** Grava só se ainda não houver valor, e devolve o que ficou valendo. */
+  fixarConfiguracao(chave: string, valor: string): Promise<string>;
 }
 
 /**

@@ -1,17 +1,24 @@
 "use server";
 
 import { agora, repositorio, ErroUnicidade } from "@/lib/repositorio";
+import { exigirAcesso, exigirGestor } from "@/lib/sessao";
 import type { Etapa, EstadoEtapa, PainelAtivo, Resultado } from "@/lib/tipos";
 
 // =====================================================================
 // Etapas
 // =====================================================================
 
+/**
+ * Lista de etapas. É a única leitura sem trava: a tela de escolha da máquina
+ * roda antes de qualquer login, e é dela que o operador precisa.
+ */
 export async function listarEtapas(apenasAtivas = false): Promise<Etapa[]> {
   return (await repositorio()).listarEtapas(apenasAtivas);
 }
 
 export async function criarEtapa(nome: string): Promise<Resultado<Etapa>> {
+  await exigirGestor();
+
   const limpo = nome.trim();
   if (!limpo) return { ok: false, erro: "Informe o nome da etapa." };
 
@@ -27,6 +34,8 @@ export async function criarEtapa(nome: string): Promise<Resultado<Etapa>> {
 }
 
 export async function renomearEtapa(id: string, nome: string): Promise<Resultado> {
+  await exigirGestor();
+
   const limpo = nome.trim();
   if (!limpo) return { ok: false, erro: "Informe o nome da etapa." };
 
@@ -42,6 +51,7 @@ export async function renomearEtapa(id: string, nome: string): Promise<Resultado
 }
 
 export async function definirAtivaEtapa(id: string, ativa: boolean): Promise<Resultado> {
+  await exigirGestor();
   const repo = await repositorio();
 
   // Inativar uma etapa com apontamento em curso deixaria o ciclo aberto pela metade.
@@ -62,6 +72,7 @@ export async function definirAtivaEtapa(id: string, ativa: boolean): Promise<Res
 
 /** Exclui apenas etapas sem apontamentos vinculados; as demais só podem ser inativadas. */
 export async function excluirEtapa(id: string): Promise<Resultado> {
+  await exigirGestor();
   const repo = await repositorio();
 
   if ((await repo.contarApontamentosDaEtapa(id)) > 0) {
@@ -198,6 +209,8 @@ export async function finalizar(etapaId: string): Promise<Resultado<EstadoEtapa>
  * diferença de timestamps, igual à tela do operador.
  */
 export async function listarSessoesAtivas(): Promise<PainelAtivo> {
+  await exigirAcesso();
+
   const sessoes = await (await repositorio()).listarSessoesAtivas();
   return { sessoes, agora: agora().toISOString() };
 }

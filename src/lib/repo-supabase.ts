@@ -8,6 +8,9 @@ import type {
   Sessao,
   SessaoAtiva,
   Status,
+  TipoAcesso,
+  Usuario,
+  UsuarioComSenha,
 } from "./tipos";
 
 /**
@@ -33,6 +36,9 @@ interface RegistroBruto {
 }
 
 const CODIGO_UNICIDADE = "23505";
+
+/** Colunas do usuário que podem circular; `senha_hash` nunca está entre elas. */
+const CAMPOS_USUARIO = "id, nome, tipo, ativo, primeiro_login";
 
 /**
  * Quantas linhas pedir por requisição. A API REST do Supabase corta a resposta
@@ -246,5 +252,103 @@ export class RepositorioSupabase implements Repositorio {
       justificativa: r.justificativa,
       etapa_nome: nomeEtapa(r),
     }));
+  }
+
+  // ---- usuários do painel ------------------------------------------------
+
+  async listarUsuarios(): Promise<Usuario[]> {
+    const { data, error } = await this.db.from("usuarios").select(CAMPOS_USUARIO).order("nome");
+    if (error) throw new Error(error.message);
+    return (data ?? []) as unknown as Usuario[];
+  }
+
+  async obterUsuario(id: string): Promise<Usuario | null> {
+    const { data, error } = await this.db
+      .from("usuarios")
+      .select(CAMPOS_USUARIO)
+      .eq("id", id)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return (data as unknown as Usuario) ?? null;
+  }
+
+  async obterUsuarioPorNome(nome: string): Promise<UsuarioComSenha | null> {
+    // `ilike` sem curinga é igualdade sem diferenciar maiúsculas: quem
+    // cadastrou "Joao" entra como "joao".
+    const { data, error } = await this.db
+      .from("usuarios")
+      .select(`${CAMPOS_USUARIO}, senha_hash`)
+      .ilike("nome", nome)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return (data as unknown as UsuarioComSenha) ?? null;
+  }
+
+  async criarUsuario(nome: string, tipo: TipoAcesso, senhaHash: string): Promise<Usuario> {
+    const { data, error } = await this.db
+      .from("usuarios")
+      .insert({ nome, tipo, ativo: true, senha_hash: senhaHash, primeiro_login: true })
+      .select(CAMPOS_USUARIO)
+      .single();
+    if (error) {
+      if (error.code === CODIGO_UNICIDADE) throw new ErroUnicidade("nome de usuário repetido");
+      throw new Error(error.message);
+    }
+    return data as unknown as Usuario;
+  }
+
+  async renomearUsuario(id: string, nome: string): Promise<void> {
+    const { error } = await this.db.from("usuarios").update({ nome }).eq("id", id);
+    if (error) {
+      if (error.code === CODIGO_UNICIDADE) throw new ErroUnicidade("nome de usuário repetido");
+      throw new Error(error.message);
+    }
+  }
+
+  async definirAtivoUsuario(id: string, ativo: boolean): Promise<void> {
+    const { error } = await this.db.from("usuarios").update({ ativo }).eq("id", id);
+    if (error) throw new Error(error.message);
+  }
+
+  async definirSenhaUsuario(
+    id: string,
+    senhaHash: string,
+    primeiroLogin: boolean
+  ): Promise<void> {
+    const { error } = await this.db
+      .from("usuarios")
+      .update({ senha_hash: senhaHash, primeiro_login: primeiroLogin })
+      .eq("id", id);
+    if (error) throw new Error(error.message);
+  }
+
+  async excluirUsuario(id: string): Promise<void> {
+    const { error } = await this.db.from("usuarios").delete().eq("id", id);
+    if (error) throw new Error(error.message);
+  }
+
+  // ---- configuração do próprio sistema -----------------------------------
+
+  async obterConfiguracao(chave: string): Promise<string | null> {
+    const { data, error } = await this.db
+      .from("configuracao")
+      .select("valor")
+      .eq("chave", chave)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return (data as { valor: string } | null)?.valor ?? null;
+  }
+
+  async fixarConfiguracao(chave: string, valor: string): Promise<string> {
+    // `ignoreDuplicates` mantém o valor que já estava; a releitura logo abaixo
+    // devolve o que de fato ficou valendo, não o que tentamos gravar.
+    const { error } = await this.db
+      .from("configuracao")
+      .upsert({ chave, valor }, { onConflict: "chave", ignoreDuplicates: true });
+    if (error) throw new Error(error.message);
+
+    const efetivo = await this.obterConfiguracao(chave);
+    if (!efetivo) throw new Error(`Não foi possível gravar a configuração ${chave}.`);
+    return efetivo;
   }
 }

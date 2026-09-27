@@ -60,6 +60,32 @@ begin
   end if;
 end $$;
 
+-- Usuarios do painel. A tela de apontamento nao tem login (regra 1); estes
+-- perfis valem so para o painel de gestao: GESTOR ve tudo, VENDEDOR ve apenas
+-- o dashboard, para saber onde esta o material do cliente.
+--
+-- `citext` nao esta ligado por padrao, entao a unicidade sem diferenciar
+-- maiusculas sai de um indice sobre lower(nome): cadastrar "Joao" e depois
+-- "joao" seria criar dois acessos para a mesma pessoa.
+create table if not exists usuarios (
+  id             uuid primary key default gen_random_uuid(),
+  nome           text not null,
+  tipo           text not null check (tipo in ('GESTOR','VENDEDOR')),
+  ativo          boolean not null default true,
+  senha_hash     text not null,
+  primeiro_login boolean not null default true
+);
+
+create unique index if not exists usuarios_nome_idx on usuarios (lower(nome));
+
+-- Configuracao do proprio sistema: hoje so a chave que assina os cookies de
+-- sessao. Fica no banco para o sistema subir sem configuracao nenhuma e para
+-- ninguem cair ao reiniciar o servidor.
+create table if not exists configuracao (
+  chave text primary key,
+  valor text not null
+);
+
 -- ---------------------------------------------------------------------
 -- Avanco de segmento: as duas escritas numa transacao so
 -- ---------------------------------------------------------------------
@@ -138,6 +164,8 @@ $fn$;
 alter table etapas       enable row level security;
 alter table apontamentos enable row level security;
 alter table sessoes      enable row level security;
+alter table usuarios     enable row level security;
+alter table configuracao enable row level security;
 
 -- Politicas permissivas de versoes anteriores deste arquivo.
 drop policy if exists etapas_anon       on etapas;
@@ -146,7 +174,8 @@ drop policy if exists sessoes_anon      on sessoes;
 
 -- RLS sozinha nao basta: sem o revoke, as tabelas continuariam visiveis para o
 -- papel anonimo caso alguem crie uma politica por engano mais tarde.
-revoke all on etapas, apontamentos, sessoes from anon, authenticated;
+revoke all on etapas, apontamentos, sessoes, usuarios, configuracao
+  from anon, authenticated;
 revoke execute on function avancar_segmento(uuid, text, timestamptz, text, text)
   from public, anon, authenticated;
 

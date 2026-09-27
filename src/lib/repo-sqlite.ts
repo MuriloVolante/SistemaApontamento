@@ -13,6 +13,9 @@ import type {
   SessaoAtiva,
   Status,
   Tipo,
+  TipoAcesso,
+  Usuario,
+  UsuarioComSenha,
 } from "./tipos";
 
 /**
@@ -44,6 +47,20 @@ create table if not exists sessoes (
   status          text not null check (status in ('EM_ANDAMENTO','PAUSADO')),
   segmento_inicio text not null,
   motivo          text
+);
+
+create table if not exists usuarios (
+  id             text primary key,
+  nome           text not null unique collate nocase,
+  tipo           text not null check (tipo in ('GESTOR','VENDEDOR')),
+  ativo          integer not null default 1,
+  senha_hash     text not null,
+  primeiro_login integer not null default 1
+);
+
+create table if not exists configuracao (
+  chave text primary key,
+  valor text not null
 );
 
 create index if not exists apontamentos_numero_os_idx on apontamentos (numero_os);
@@ -87,6 +104,26 @@ const ETAPAS_INICIAIS = [
   "Expedicao",
   "Ricoh",
 ];
+
+interface UsuarioBruto {
+  id: string;
+  nome: string;
+  tipo: TipoAcesso;
+  ativo: number;
+  senha_hash: string;
+  primeiro_login: number;
+}
+
+/** O SQLite não tem booleano: 0 e 1 viram false e true aqui, e só aqui. */
+function comoUsuario(u: UsuarioBruto): Usuario {
+  return {
+    id: u.id,
+    nome: u.nome,
+    tipo: u.tipo,
+    ativo: Boolean(u.ativo),
+    primeiro_login: Boolean(u.primeiro_login),
+  };
+}
 
 interface EtapaBruta {
   id: string;
@@ -379,5 +416,101 @@ export class RepositorioSqlite implements Repositorio {
       .all(...valores) as LinhaBruta[];
 
     return linhas;
+  }
+
+  // ---- usuários do painel ------------------------------------------------
+
+  async listarUsuarios(): Promise<Usuario[]> {
+    const linhas = this.db
+      .prepare("select * from usuarios order by nome collate nocase")
+      .all() as UsuarioBruto[];
+    return linhas.map(comoUsuario);
+  }
+
+  async obterUsuario(id: string): Promise<Usuario | null> {
+    const u = this.db.prepare("select * from usuarios where id = ?").get(id) as
+      | UsuarioBruto
+      | undefined;
+    return u ? comoUsuario(u) : null;
+  }
+
+  async obterUsuarioPorNome(nome: string): Promise<UsuarioComSenha | null> {
+    // `collate nocase` no índice: quem cadastrou "Joao" entra como "joao".
+    const u = this.db.prepare("select * from usuarios where nome = ? collate nocase").get(nome) as
+      | UsuarioBruto
+      | undefined;
+    return u ? { ...comoUsuario(u), senha_hash: u.senha_hash } : null;
+  }
+
+  async criarUsuario(nome: string, tipo: TipoAcesso, senhaHash: string): Promise<Usuario> {
+    const usuario: Usuario = {
+      id: randomUUID(),
+      nome,
+      tipo,
+      ativo: true,
+      primeiro_login: true,
+    };
+    try {
+      this.db
+        .prepare(
+          `insert into usuarios (id, nome, tipo, ativo, senha_hash, primeiro_login)
+           values (?, ?, ?, 1, ?, 1)`
+        )
+        .run(usuario.id, nome, tipo, senhaHash);
+    } catch (e) {
+      if (ehViolacaoUnica(e)) throw new ErroUnicidade("nome de usuário repetido");
+      throw e;
+    }
+    return usuario;
+  }
+
+  async renomearUsuario(id: string, nome: string): Promise<void> {
+    try {
+      this.db.prepare("update usuarios set nome = ? where id = ?").run(nome, id);
+    } catch (e) {
+      if (ehViolacaoUnica(e)) throw new ErroUnicidade("nome de usuário repetido");
+      throw e;
+    }
+  }
+
+  async definirAtivoUsuario(id: string, ativo: boolean): Promise<void> {
+    this.db.prepare("update usuarios set ativo = ? where id = ?").run(ativo ? 1 : 0, id);
+  }
+
+  async definirSenhaUsuario(
+    id: string,
+    senhaHash: string,
+    primeiroLogin: boolean
+  ): Promise<void> {
+    this.db
+      .prepare("update usuarios set senha_hash = ?, primeiro_login = ? where id = ?")
+      .run(senhaHash, primeiroLogin ? 1 : 0, id);
+  }
+
+  async excluirUsuario(id: string): Promise<void> {
+    this.db.prepare("delete from usuarios where id = ?").run(id);
+  }
+
+  // ---- configuração do próprio sistema -----------------------------------
+
+  async obterConfiguracao(chave: string): Promise<string | null> {
+    const linha = this.db.prepare("select valor from configuracao where chave = ?").get(chave) as
+      | { valor: string }
+      | undefined;
+    return linha?.valor ?? null;
+  }
+
+  async fixarConfiguracao(chave: string, valor: string): Promise<string> {
+    // `insert or ignore` e releitura na mesma transação: se dois processos
+    // sortearem uma chave de sessão ao mesmo tempo, os dois saem com a mesma.
+    return this.db.transaction((): string => {
+      this.db
+        .prepare("insert or ignore into configuracao (chave, valor) values (?, ?)")
+        .run(chave, valor);
+      const linha = this.db.prepare("select valor from configuracao where chave = ?").get(chave) as {
+        valor: string;
+      };
+      return linha.valor;
+    }).immediate();
   }
 }

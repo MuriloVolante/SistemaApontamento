@@ -630,9 +630,9 @@ textarea {
   position: relative;
   max-width: 1420px;
   margin: 0 auto;
-  /* Espaço à direita reservado para o botão de saída, que é absoluto: assim
+  /* Espaço à direita reservado para o canto da conta, que é absoluto: assim
      as abas ficam centradas na janela, e não deslocadas por ele. */
-  padding: 0 calc(var(--respiro) + 44px);
+  padding: 0 calc(var(--respiro) + 96px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -698,12 +698,35 @@ textarea {
 }
 
 /* Só a seta: volta para a tela de apontamento. */
-.navbar-saida {
+/* Canto direito da navbar: quem entrou, o atalho do apontamento e a saída. */
+.navbar-conta {
   position: absolute;
   right: var(--respiro);
   top: 50%;
   transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.navbar-usuario {
   display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 22ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: #c3d0da;
+}
+
+.navbar-saida {
+  display: inline-flex;
+  flex: 0 0 auto;
+  background: none;
+  cursor: pointer;
   align-items: center;
   justify-content: center;
   width: 34px;
@@ -721,7 +744,7 @@ textarea {
 }
 
 .navbar-saida:active {
-  transform: translateY(-50%) scale(0.94);
+  transform: scale(0.94);
 }
 
 /* ---------------------------------------------------------------------
@@ -1886,6 +1909,240 @@ table.tabela tbody tr:last-child td {
 .fab:active {
   transform: scale(0.94);
   background: var(--acento-escuro);
+}
+
+
+/* ---------------------------------------------------------------------
+   Entrada no painel
+   --------------------------------------------------------------------- */
+
+.entrada {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: var(--respiro);
+  background: var(--fundo);
+}
+
+.entrada-cartao {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 380px;
+  padding: clamp(24px, 4vw, 34px);
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-g);
+  box-shadow: var(--sombra-m);
+  animation: surgir 280ms var(--saida-suave) both;
+}
+
+.entrada-selo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin-bottom: 16px;
+  color: var(--acento);
+  background: var(--acento-tenue);
+  border-radius: 50%;
+}
+
+.entrada-titulo {
+  font-size: 1.3rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0 0 6px;
+}
+
+.entrada-texto {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--tinta-fraca);
+  margin: 0 0 20px;
+}
+
+.entrada-cartao .campo-rotulo {
+  margin-top: 12px;
+}
+
+.entrada-cartao .campo-rotulo:first-of-type {
+  margin-top: 0;
+}
+
+.entrada-botao {
+  justify-content: center;
+  margin-top: 22px;
+  height: 46px;
+}
+
+.entrada-atalho {
+  font-size: 0.85rem;
+  color: var(--tinta-fraca);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: color var(--rapido), border-color var(--rapido);
+}
+
+.entrada-atalho:hover {
+  color: var(--acento);
+  border-bottom-color: var(--acento);
+}
+
+/* ---------------------------------------------------------------------
+   Usuários
+   --------------------------------------------------------------------- */
+
+.novo-usuario {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.novo-usuario-campo {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.novo-usuario-campo--estreito {
+  flex: 0 1 180px;
+}
+
+/* Aviso que não é erro: a senha provisória que o gestor precisa repassar. */
+.aviso-suave {
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  color: var(--verde-escuro);
+  background: var(--verde-tenue);
+  border: 1px solid var(--verde-borda);
+  border-left: 3px solid var(--verde);
+  border-radius: var(--raio);
+  animation: surgir 200ms var(--saida-suave) both;
+}
+
+.etiqueta--pendente {
+  color: var(--ambar-escuro);
+  background: var(--ambar-tenue);
+  border-color: var(--ambar-borda);
+}
+
+.coluna-acoes {
+  width: 1%;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* ---- engrenagem da linha ---- */
+
+.menu-alvo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  color: var(--tinta-fraca);
+  background: var(--superficie);
+  border: 1px solid var(--borda-media);
+  border-radius: var(--raio);
+  cursor: pointer;
+  transition: color var(--rapido), border-color var(--rapido), background var(--rapido);
+}
+
+.menu-alvo:hover,
+.menu-alvo--aberto {
+  color: var(--acento);
+  border-color: var(--acento);
+  background: var(--acento-tenue);
+}
+
+/* Desenhada no body: `fixed`, com top/left vindos da medida do botão. */
+.menu-lista {
+  position: fixed;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  padding: 5px;
+  background: var(--superficie);
+  border: 1px solid var(--borda-media);
+  border-radius: var(--raio);
+  box-shadow: var(--sombra-m);
+  animation: surgir 150ms var(--saida-suave) both;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 10px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  text-align: left;
+  color: var(--tinta-media);
+  background: none;
+  border: none;
+  border-radius: calc(var(--raio) - 3px);
+  cursor: pointer;
+  transition: background var(--rapido), color var(--rapido);
+}
+
+.menu-item:hover:not(:disabled) {
+  color: var(--tinta);
+  background: var(--superficie-3);
+}
+
+.menu-item:disabled {
+  color: var(--tinta-fraca);
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* A exclusão fica separada e vermelha: não se clica nela por inércia. */
+.menu-divisor {
+  height: 1px;
+  margin: 5px 4px;
+  background: var(--borda);
+}
+
+.menu-item--perigo {
+  color: var(--vermelho);
+}
+
+.menu-item--perigo:hover:not(:disabled) {
+  color: var(--vermelho-escuro);
+  background: var(--vermelho-tenue);
+}
+
+/* Texto corrido dentro de um diálogo: largura de leitura, não de caixa. */
+.modal-texto {
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--tinta-media);
+  margin: 0;
+  max-width: 46ch;
+}
+
+@media (max-width: 640px) {
+  /* O nome some antes dos botões: o ícone de conta já diz que há alguém. */
+  .navbar-usuario {
+    display: none;
+  }
+
+  .navbar-interna {
+    padding: 0 calc(var(--respiro) + 76px) 0 var(--respiro);
+  }
+
+  .novo-usuario-campo--estreito {
+    flex: 1 1 100%;
+  }
 }
 
 /* ---------------------------------------------------------------------
