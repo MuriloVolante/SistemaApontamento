@@ -102,7 +102,7 @@ function rodapePaginas(doc: jsPDF): void {
   doc.setTextColor(20);
 }
 
-/** Relatório detalhado: espelho exato da tabela filtrada. */
+/** Relatório analítico: espelho exato da tabela filtrada. */
 export function gerarPdfAnalitico(
   linhas: LinhaApontamento[],
   totais: Totais,
@@ -110,7 +110,7 @@ export function gerarPdfAnalitico(
 ): void {
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
 
-  let y = cabecalho(doc, "Relatório Detalhado de Apontamentos", criterios);
+  let y = cabecalho(doc, "Relatório Analítico de Apontamentos", criterios);
   y = faixaTotais(doc, y, totais);
 
   autoTable(doc, {
@@ -169,13 +169,13 @@ export function gerarPdfAnalitico(
 }
 
 /**
- * Resumo: por etapa, tempo total, em operação e pausado, com
+ * Relatório sintético: por etapa, tempo total, em operação e pausado, com
  * linha de total consolidado.
  */
 export function gerarPdfSintetico(linhas: LinhaSintetico[], criterios: string[]): void {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 
-  const y = cabecalho(doc, "Resumo por Etapa", criterios);
+  const y = cabecalho(doc, "Relatório Sintético por Etapa", criterios);
 
   const consolidado = linhas.reduce(
     (s, l) => ({

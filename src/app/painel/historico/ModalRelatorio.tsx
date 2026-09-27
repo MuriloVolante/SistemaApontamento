@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Modal from "@/components/Modal";
 import Icone from "@/components/Icone";
+import Dica from "@/components/Dica";
 import { consultarApontamentos, relatorioSintetico } from "../../consultas";
 import { gerarPdfAnalitico, gerarPdfSintetico } from "@/lib/pdf";
 import { formatarData, limitesLocais } from "@/lib/tempo";
@@ -134,10 +135,16 @@ export default function ModalRelatorio({ herdado, aoFechar }: Props) {
             <Icone nome="relatorio" tamanho={20} />
           </span>
           <span className="relatorio-opcao-texto">
-            <strong>{gerando === "ANALITICO" ? "Gerando…" : "Detalhado"}</strong>
-            Tudo linha por linha: cada vez que a máquina rodou e cada vez que parou,
-            com hora de início, hora de fim e o motivo de cada parada. É o relatório
-            para conferir o que aconteceu.
+            <strong>
+              {gerando === "ANALITICO" ? "Gerando…" : "Analítico"}
+              {gerando !== "ANALITICO" && (
+                <Dica sobre="o relatório analítico">
+                  Tudo linha por linha: cada vez que a máquina rodou e cada vez que
+                  parou, com hora de início, hora de fim e o motivo de cada parada. É o
+                  relatório para conferir o que aconteceu.
+                </Dica>
+              )}
+            </strong>
           </span>
         </button>
 
@@ -151,10 +158,16 @@ export default function ModalRelatorio({ herdado, aoFechar }: Props) {
             <Icone nome="etapa" tamanho={20} />
           </span>
           <span className="relatorio-opcao-texto">
-            <strong>{gerando === "SINTETICO" ? "Gerando…" : "Resumo"}</strong>
-            Uma linha por etapa — ou seja, por máquina ou setor: o tempo total, quanto
-            tempo rodou e quanto tempo ficou parada. É o relatório para bater o olho e
-            comparar.
+            <strong>
+              {gerando === "SINTETICO" ? "Gerando…" : "Sintético"}
+              {gerando !== "SINTETICO" && (
+                <Dica sobre="o relatório sintético">
+                  Uma linha por etapa — ou seja, por máquina ou setor: o tempo total,
+                  quanto tempo rodou e quanto tempo ficou parada. É o relatório para
+                  bater o olho e comparar.
+                </Dica>
+              )}
+            </strong>
           </span>
         </button>
       </div>

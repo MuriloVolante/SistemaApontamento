@@ -23,7 +23,7 @@ export async function consultarApontamentos(f: FiltroConsulta): Promise<Resultad
   return { linhas, totais };
 }
 
-/** Tempo total, em operação e em pausa por etapa, para o relatório de resumo. */
+/** Tempo total, em operação e em pausa por etapa, para o relatório sintético. */
 export async function relatorioSintetico(f: FiltroConsulta): Promise<LinhaSintetico[]> {
   const { linhas } = await consultarApontamentos(f);
 

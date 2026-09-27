@@ -1991,9 +1991,90 @@ table.tabela tbody tr:last-child td {
 }
 
 .relatorio-opcao-texto strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: 0.95rem;
   font-weight: 600;
   color: var(--tinta);
+}
+
+/* ---------------------------------------------------------------------
+   Dica de canto — o "i" que explica sem ocupar a tela
+   --------------------------------------------------------------------- */
+
+.dica {
+  position: relative;
+  display: inline-flex;
+  line-height: 0;
+}
+
+.dica-alvo {
+  display: inline-flex;
+  padding: 2px;
+  color: var(--tinta-fraca);
+  background: none;
+  border: none;
+  border-radius: 50%;
+  cursor: help;
+  transition: color var(--rapido);
+}
+
+.dica-alvo:hover,
+.dica-alvo[aria-expanded="true"] {
+  color: var(--acento);
+}
+
+.dica-alvo:focus-visible {
+  outline: none;
+  box-shadow: var(--anel);
+}
+
+/* Sobe do lado do "i" e some do fluxo: abrir a dica não mexe no layout. */
+.dica-balao {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
+  width: max-content;
+  max-width: min(260px, 70vw);
+  padding: 9px 11px;
+  font-size: 0.78rem;
+  font-weight: 400;
+  line-height: 1.45;
+  text-align: left;
+  color: var(--superficie);
+  background: var(--escuro);
+  border-radius: var(--raio);
+  box-shadow: var(--sombra-m);
+  animation: surgir 140ms var(--saida-suave) both;
+  pointer-events: none;
+}
+
+/* A setinha que aponta para o "i". */
+.dica-balao::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border: 5px solid transparent;
+  border-top-color: var(--escuro);
+}
+
+/* Perto da borda da tela o balão encosta e para de centralizar. */
+@media (max-width: 520px) {
+  .dica-balao {
+    left: auto;
+    right: -8px;
+    transform: none;
+  }
+
+  .dica-balao::after {
+    left: auto;
+    right: 14px;
+  }
 }
 
 .modal-rodape {
