@@ -5,7 +5,8 @@ import Modal from "@/components/Modal";
 import Icone from "@/components/Icone";
 import Dica from "@/components/Dica";
 import { consultarApontamentos, relatorioSintetico } from "@/app/consultas";
-import { formatarData, limitesLocais } from "@/lib/tempo";
+import { limitesLocais } from "@/lib/tempo";
+import type { CriteriosRelatorio } from "@/lib/pdf";
 import type { Etapa, Tipo } from "@/lib/tipos";
 
 interface Props {
@@ -72,20 +73,8 @@ export default function ModalRelatorio({ herdado, etapas, aoFechar }: Props) {
     return { os, etapaId, tipo, deISO, ateISO };
   }
 
-  function criterios(): string[] {
-    const periodo =
-      dataInicio || dataFim
-        ? `${dataInicio ? formatarData(`${dataInicio}T12:00:00`) : "início"} a ${
-            dataFim ? formatarData(`${dataFim}T12:00:00`) : "hoje"
-          }`
-        : "Todo o período";
-
-    return [
-      `Período: ${periodo}`,
-      `OS: ${os.trim() ? `contém "${os.trim()}"` : "todas"}   |   Etapa: ${nomeEtapa}   |   Tipo: ${
-        ROTULO_TIPO[tipo]
-      }`,
-    ];
+  function criterios(): CriteriosRelatorio {
+    return { de: dataInicio, ate: dataFim, os, etapa: nomeEtapa, tipo: ROTULO_TIPO[tipo] };
   }
 
   async function gerar(qual: "ANALITICO" | "SINTETICO") {
@@ -108,7 +97,7 @@ export default function ModalRelatorio({ herdado, etapas, aoFechar }: Props) {
           setErro("Não há nada gravado com esses filtros. Tente outras datas.");
           return;
         }
-        await gerarPdfAnalitico(linhas, totais, [...criterios(), `Registros: ${linhas.length}`]);
+        await gerarPdfAnalitico(linhas, totais, criterios());
       } else {
         const linhas = await relatorioSintetico(filtro());
         if (linhas.length === 0) {

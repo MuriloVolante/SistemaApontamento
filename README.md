@@ -302,10 +302,14 @@ outros dois.
 Etapa, Tipo e a data, que vira o período). Todos continuam editáveis ali. O
 diálogo recusa período com início depois do fim. Os dois relatórios:
 
-- **Analítico:** um apontamento por linha, espelho da tabela, com os três
-  totais no cabeçalho.
-- **Sintético:** uma linha por etapa com tempo total, em operação e pausado,
-  fechando com o total consolidado.
+- **Analítico** (folha deitada): um apontamento por linha, espelho da tabela,
+  com os três totais em cartões acima dela.
+- **Sintético** (folha em pé): uma linha por etapa com tempo total, em
+  operação e pausado, fechando com o total consolidado.
+
+Os dois seguem os modelos aprovados: título e logotipo no topo, data de
+emissão, e uma caixa com os filtros usados (período, OS, etapa e tipo, e no
+analítico também o número de registros), cada um com o seu ícone.
 
 O **ⓘ** ao lado de cada nome explica o relatório ao passar o mouse ou tocar.
 
