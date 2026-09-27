@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Icone from "@/components/Icone";
+import useTituloJanela from "@/components/useTituloJanela";
 import { listarEtapas } from "../../actions";
 import { gravarEtapaConfigurada, lerEtapaConfigurada } from "@/lib/maquina";
 import type { Etapa } from "@/lib/tipos";
@@ -19,6 +20,8 @@ export default function TelaConfiguracao() {
   const [atual, setAtual] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
+
+  useTituloJanela("Escolher máquina");
 
   useEffect(() => {
     setAtual(lerEtapaConfigurada());

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Icone from "@/components/Icone";
 import Transicao from "@/components/Transicao";
+import useTituloJanela from "@/components/useTituloJanela";
 
 const PAGINAS = [
   { href: "/painel", rotulo: "Dashboard" },
@@ -21,6 +22,8 @@ export default function LayoutPainel({ children }: { children: React.ReactNode }
   const ativo =
     PAGINAS.find((p) => (p.href === "/painel" ? caminho === p.href : caminho.startsWith(p.href)))
       ?.href ?? "/painel";
+
+  useTituloJanela(PAGINAS.find((p) => p.href === ativo)?.rotulo);
 
   const lista = useRef<HTMLUListElement>(null);
   const abas = useRef<Record<string, HTMLAnchorElement | null>>({});

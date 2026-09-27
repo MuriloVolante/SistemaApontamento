@@ -318,6 +318,13 @@ Então o acesso é só pelo servidor. As variáveis não levam o prefixo
 `anon`, e todo o tráfego passa pelas server actions. Nenhuma linha do código do
 navegador fala com o Supabase.
 
+### Depois de atualizar o sistema
+
+O navegador guarda a tela que carregou. Se uma aba ficou aberta durante a
+atualização, ela continua rodando o código antigo — a tela parece a mesma, mas
+sem o que mudou. Depois de reiniciar o `iniciar.bat`, feche e abra a aba de cada
+máquina (ou `Ctrl` + `F5`).
+
 ### Atualização ao vivo e tipo de hospedagem
 
 O painel recebe as mudanças por um fluxo aberto (SSE) alimentado por um único

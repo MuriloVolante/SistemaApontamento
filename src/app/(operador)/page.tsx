@@ -5,10 +5,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Modal from "@/components/Modal";
 import Icone from "@/components/Icone";
+import useTituloJanela from "@/components/useTituloJanela";
 import { conferirPassagem, finalizar, iniciar, obterEstado, parar, retomar } from "../actions";
 import { lerEtapaConfigurada } from "@/lib/maquina";
-import { diferencaEmSegundos, formatarData, formatarDuracao, formatarHora } from "@/lib/tempo";
-import type { EstadoEtapa, PassagemAnterior } from "@/lib/tipos";
+import { diferencaEmSegundos, formatarDuracao } from "@/lib/tempo";
+import type { EstadoEtapa } from "@/lib/tipos";
 
 type Situacao = "PARADO" | "EM_ANDAMENTO" | "PAUSADO";
 
@@ -45,8 +46,8 @@ export default function TelaOperador() {
   const [motivo, setMotivo] = useState("");
   const [pedindoMotivo, setPedindoMotivo] = useState(false);
   const [confirmandoFim, setConfirmandoFim] = useState(false);
-  // Preenchido quando a OS digitada já tem apontamento nesta etapa.
-  const [passagem, setPassagem] = useState<PassagemAnterior | null>(null);
+  // Ligado quando a OS digitada já tem apontamento nesta etapa.
+  const [jaPassou, setJaPassou] = useState(false);
 
   // Diferença entre o relógio do servidor e o do navegador. O cronômetro é
   // sempre now() + desvio - segmento_inicio: nunca um contador incremental.
@@ -97,6 +98,9 @@ export default function TelaOperador() {
       window.removeEventListener("focus", revalidar);
     };
   }, [etapaId, sincronizar]);
+
+  // O nome da máquina na aba do navegador.
+  useTituloJanela(estado?.etapa?.nome);
 
   // Pulso do cronômetro: apenas redesenha; o valor vem da diferença de datas.
   useEffect(() => {
@@ -188,7 +192,7 @@ export default function TelaOperador() {
 
   async function aoIniciar() {
     if (!etapaId) return;
-    setPassagem(null);
+    setJaPassou(false);
     if (await executar(() => iniciar(etapaId, os))) setMotivo("");
   }
 
@@ -200,16 +204,16 @@ export default function TelaOperador() {
     if (!etapaId || !os.trim() || ocupado) return;
 
     setOcupado(true);
-    let anterior: PassagemAnterior | null = null;
+    let repetida = false;
     try {
-      anterior = await conferirPassagem(etapaId, os);
+      repetida = await conferirPassagem(etapaId, os);
     } catch {
       // O aviso é uma cortesia, não uma trava: se a conferência falhar, aponta.
     } finally {
       setOcupado(false);
     }
 
-    if (anterior?.passou) setPassagem(anterior);
+    if (repetida) setJaPassou(true);
     else await aoIniciar();
   }
 
@@ -332,25 +336,16 @@ export default function TelaOperador() {
       )}
 
       {/* Aviso de repetição: informa, não impede. */}
-      {passagem && (
+      {jaPassou && (
         <Modal
-          titulo={`${comoOs(os)} já passou por esta etapa`}
-          aoFechar={() => setPassagem(null)}
+          titulo={`${comoOs(os)} já passou por esta etapa, deseja continuar?`}
+          aoFechar={() => setJaPassou(false)}
         >
-          <p className="modal-texto">
-            {passagem.ultimoFim
-              ? `A última vez terminou em ${formatarData(passagem.ultimoFim)} às ${formatarHora(
-                  passagem.ultimoFim
-                )}.`
-              : "Já existe apontamento desta OS aqui."}{" "}
-            Pode ser retrabalho ou uma segunda passagem normal — quem sabe é você.
-          </p>
-
           <div className="modal-acoes">
             <button
               type="button"
               className="op-botao"
-              onClick={() => setPassagem(null)}
+              onClick={() => setJaPassou(false)}
               disabled={ocupado}
             >
               Cancelar

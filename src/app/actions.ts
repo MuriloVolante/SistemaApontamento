@@ -1,7 +1,7 @@
 "use server";
 
 import { agora, repositorio, ErroUnicidade } from "@/lib/repositorio";
-import type { Etapa, EstadoEtapa, PainelAtivo, PassagemAnterior, Resultado } from "@/lib/tipos";
+import type { Etapa, EstadoEtapa, PainelAtivo, Resultado } from "@/lib/tipos";
 
 // =====================================================================
 // Etapas
@@ -105,18 +105,14 @@ export async function obterEstado(etapaId: string): Promise<EstadoEtapa> {
  * segunda passagem normal, e quem sabe disso é quem está na máquina. Não
  * bloqueia nada — só informa.
  */
-export async function conferirPassagem(
-  etapaId: string,
-  numeroOs: string
-): Promise<PassagemAnterior> {
+export async function conferirPassagem(etapaId: string, numeroOs: string): Promise<boolean> {
   const os = numeroOs.trim();
-  if (!os) return { passou: false, ultimoFim: null };
+  if (!os) return false;
 
+  // Sem recorte de data e sem olhar de qual computador veio: a regra é a
+  // existência do apontamento, em qualquer momento e de qualquer máquina.
   const linhas = await (await repositorio()).consultarApontamentos({ osExata: os, etapaId });
-  if (linhas.length === 0) return { passou: false, ultimoFim: null };
-
-  // A consulta vem ordenada por início, então o último registro tem o fim mais recente.
-  return { passou: true, ultimoFim: linhas[linhas.length - 1].fim };
+  return linhas.length > 0;
 }
 
 export async function iniciar(etapaId: string, numeroOs: string): Promise<Resultado<EstadoEtapa>> {

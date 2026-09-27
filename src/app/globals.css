@@ -607,15 +607,6 @@ textarea {
   line-height: 1.3;
 }
 
-/* Texto corrido dentro de um diálogo: largura de leitura, não de caixa. */
-.modal-texto {
-  font-size: 1rem;
-  line-height: 1.55;
-  color: var(--tinta-media);
-  margin: 0;
-  max-width: 46ch;
-}
-
 .modal-acoes {
   display: grid;
   grid-template-columns: 1fr 1fr;
