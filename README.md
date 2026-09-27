@@ -63,6 +63,11 @@ atualização, ela continua rodando o código antigo: a tela parece a mesma, mas
 sem o que mudou. Depois de reiniciar o `iniciar.bat`, feche e abra a aba de cada
 máquina (ou `Ctrl` + `F5`).
 
+Quando a aba velha tenta abrir uma tela cujo arquivo já não existe (o erro
+`ChunkLoadError` no console), o sistema recarrega a página sozinho, uma vez.
+Se o erro voltar em seguida, ele não insiste: aí é outro problema, não aba
+velha.
+
 ### Mexer no banco
 
 O arquivo `dados/apontamento.db` é um SQLite comum, abre no
@@ -520,6 +525,7 @@ src/
     Dica.tsx                 o "i" que explica sem ocupar a tela
     Transicao.tsx            troca de tela deslizante
     useTituloJanela.ts       nome da tela na aba do navegador
+    RecuperarVersao.tsx      recarrega sozinho a aba que ficou de versão anterior
     Icone.tsx                ícones no traço do Iconoir, embutidos
     Marca.tsx                logotipo ou símbolo Mautus, na cor do texto em volta
   fontes/                    IBM Plex Sans (.woff2), para rodar sem internet
