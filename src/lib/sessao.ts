@@ -53,7 +53,7 @@ export async function criarSessao(usuario: SessaoUsuario, trocar: boolean): Prom
   const conteudo: Conteudo = { ...usuario, trocar, exp: Date.now() + DIAS * 86_400_000 };
   const carga = Buffer.from(JSON.stringify(conteudo)).toString("base64url");
 
-  cookies().set(COOKIE, `${carga}.${assinar(carga, await segredo())}`, {
+  (await cookies()).set(COOKIE, `${carga}.${assinar(carga, await segredo())}`, {
     httpOnly: true,
     sameSite: "lax",
     path: "/",
@@ -61,13 +61,13 @@ export async function criarSessao(usuario: SessaoUsuario, trocar: boolean): Prom
   });
 }
 
-export function encerrarSessao(): void {
-  cookies().delete(COOKIE);
+export async function encerrarSessao(): Promise<void> {
+  (await cookies()).delete(COOKIE);
 }
 
 /** Lê e confere a assinatura do cookie. Null quando não há sessão válida. */
 export async function lerSessao(): Promise<SessaoLida | null> {
-  const bruto = cookies().get(COOKIE)?.value;
+  const bruto = (await cookies()).get(COOKIE)?.value;
   if (!bruto) return null;
 
   const separador = bruto.lastIndexOf(".");

@@ -95,5 +95,5 @@ export async function definirSenha(nova: string, confirmacao: string): Promise<R
 }
 
 export async function sair(): Promise<void> {
-  encerrarSessao();
+  await encerrarSessao();
 }

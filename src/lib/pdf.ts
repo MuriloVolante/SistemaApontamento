@@ -1,5 +1,5 @@
 import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+import { autoTable } from "jspdf-autotable";
 import type { CellHookData } from "jspdf-autotable";
 import { formatarData, formatarDuracao, formatarHora } from "./tempo";
 import type { LinhaApontamento, LinhaSintetico, Totais } from "./tipos";

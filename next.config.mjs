@@ -9,9 +9,7 @@ const nextConfig = {
   distDir: process.env.NODE_ENV === "development" ? ".next-dev" : ".next",
 
   // better-sqlite3 é um módulo nativo: não pode ser empacotado pelo bundler.
-  experimental: {
-    serverComponentsExternalPackages: ["better-sqlite3"],
-  },
+  serverExternalPackages: ["better-sqlite3"],
 };
 
 export default nextConfig;
