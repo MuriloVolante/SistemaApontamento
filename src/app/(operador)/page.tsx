@@ -5,15 +5,24 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Modal from "@/components/Modal";
 import Icone from "@/components/Icone";
-import { finalizar, iniciar, obterEstado, parar, retomar } from "../actions";
+import { conferirPassagem, finalizar, iniciar, obterEstado, parar, retomar } from "../actions";
 import { lerEtapaConfigurada } from "@/lib/maquina";
-import { diferencaEmSegundos, formatarDuracao } from "@/lib/tempo";
-import type { EstadoEtapa } from "@/lib/tipos";
+import { diferencaEmSegundos, formatarData, formatarDuracao, formatarHora } from "@/lib/tempo";
+import type { EstadoEtapa, PassagemAnterior } from "@/lib/tipos";
 
 type Situacao = "PARADO" | "EM_ANDAMENTO" | "PAUSADO";
 
 /** De quanto em quanto tempo o estado é reconferido no banco. */
 const INTERVALO_SINCRONIA = 30_000;
+
+/**
+ * Quem digita "OS-40" já escreveu o prefixo; quem digita "40" não. Sem isto a
+ * frase sairia como "A OS OS-40 já passou...".
+ */
+function comoOs(numero: string): string {
+  const n = numero.trim();
+  return /^os|^os-/i.test(n) ? n : `OS ${n}`;
+}
 
 /**
  * Tela do operador, uma etapa de cada vez.
@@ -36,6 +45,8 @@ export default function TelaOperador() {
   const [motivo, setMotivo] = useState("");
   const [pedindoMotivo, setPedindoMotivo] = useState(false);
   const [confirmandoFim, setConfirmandoFim] = useState(false);
+  // Preenchido quando a OS digitada já tem apontamento nesta etapa.
+  const [passagem, setPassagem] = useState<PassagemAnterior | null>(null);
 
   // Diferença entre o relógio do servidor e o do navegador. O cronômetro é
   // sempre now() + desvio - segmento_inicio: nunca um contador incremental.
@@ -142,9 +153,9 @@ export default function TelaOperador() {
       <main className="aviso-config">
         <p className="op-aviso">
           {!estado?.etapa
-            ? "A etapa configurada nesta máquina não existe mais."
-            : `A etapa ${estado.etapa.nome} foi inativada.`}{" "}
-          Escolha outra etapa para esta máquina.
+            ? "A máquina escolhida neste computador não está mais cadastrada."
+            : `${estado.etapa.nome} foi desativada no painel.`}{" "}
+          Escolha outra para continuar apontando.
         </p>
         <Link
           href="/configurar"
@@ -157,7 +168,7 @@ export default function TelaOperador() {
             marginTop: 14,
           }}
         >
-          Trocar etapa
+          Escolher máquina
         </Link>
       </main>
     );
@@ -177,7 +188,29 @@ export default function TelaOperador() {
 
   async function aoIniciar() {
     if (!etapaId) return;
+    setPassagem(null);
     if (await executar(() => iniciar(etapaId, os))) setMotivo("");
+  }
+
+  /**
+   * Antes de ligar o cronômetro, confere se esta OS já passou por aqui. Se já
+   * passou, avisa e deixa a decisão com o operador; se não, inicia direto.
+   */
+  async function aoPedirInicio() {
+    if (!etapaId || !os.trim() || ocupado) return;
+
+    setOcupado(true);
+    let anterior: PassagemAnterior | null = null;
+    try {
+      anterior = await conferirPassagem(etapaId, os);
+    } catch {
+      // O aviso é uma cortesia, não uma trava: se a conferência falhar, aponta.
+    } finally {
+      setOcupado(false);
+    }
+
+    if (anterior?.passou) setPassagem(anterior);
+    else await aoIniciar();
   }
 
   async function aoParar() {
@@ -207,14 +240,14 @@ export default function TelaOperador() {
           <Link
             href="/configurar"
             className="op-voltar"
-            title="Trocar a etapa desta máquina"
-            aria-label="Trocar a etapa desta máquina"
+            title="Trocar a máquina deste computador"
+            aria-label="Trocar a máquina deste computador"
           >
             <Icone nome="setaEsquerda" tamanho={19} />
           </Link>
           <h1 className="op-etapa">{estado.etapa.nome}</h1>
         </div>
-        <Link href="/painel" className="op-link-discreto" title="Painel de gestão">
+        <Link href="/painel" className="op-link-discreto" title="Abrir o painel de gestão">
           Painel
         </Link>
       </header>
@@ -227,7 +260,7 @@ export default function TelaOperador() {
           className="op-partida"
           onSubmit={(e) => {
             e.preventDefault();
-            if (os.trim()) aoIniciar();
+            aoPedirInicio();
           }}
         >
           <p className="op-chamada">Digite o número da OS e clique em iniciar</p>
@@ -298,6 +331,42 @@ export default function TelaOperador() {
         </section>
       )}
 
+      {/* Aviso de repetição: informa, não impede. */}
+      {passagem && (
+        <Modal
+          titulo={`${comoOs(os)} já passou por esta etapa`}
+          aoFechar={() => setPassagem(null)}
+        >
+          <p className="modal-texto">
+            {passagem.ultimoFim
+              ? `A última vez terminou em ${formatarData(passagem.ultimoFim)} às ${formatarHora(
+                  passagem.ultimoFim
+                )}.`
+              : "Já existe apontamento desta OS aqui."}{" "}
+            Pode ser retrabalho ou uma segunda passagem normal — quem sabe é você.
+          </p>
+
+          <div className="modal-acoes">
+            <button
+              type="button"
+              className="op-botao"
+              onClick={() => setPassagem(null)}
+              disabled={ocupado}
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              className="op-botao op-botao--iniciar"
+              onClick={aoIniciar}
+              disabled={ocupado}
+            >
+              Continuar
+            </button>
+          </div>
+        </Modal>
+      )}
+
       {/* O motivo é pedido na hora de parar, não antes. */}
       {pedindoMotivo && (
         <Modal titulo="Por que a produção vai parar?" aoFechar={() => setPedindoMotivo(false)}>
@@ -305,7 +374,7 @@ export default function TelaOperador() {
             className="op-campo op-campo--motivo"
             rows={3}
             autoFocus
-            placeholder="Ex.: troca de bobina, falta de material"
+            placeholder="Ex.: troca de bobina, acabou o material, máquina quebrada"
             aria-label="Motivo da parada"
             value={motivo}
             onChange={(e) => setMotivo(e.target.value)}
@@ -334,7 +403,7 @@ export default function TelaOperador() {
 
       {confirmandoFim && (
         <Modal
-          titulo="Deseja realmente finalizar o apontamento desta etapa?"
+          titulo="Encerrar esta OS e parar o cronômetro?"
           aoFechar={() => setConfirmandoFim(false)}
         >
           <div className="modal-acoes">

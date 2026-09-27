@@ -72,6 +72,12 @@ export type Resultado<T = null> =
  * (ISO) pelo navegador, para que o dia filtrado seja o dia local do usuário
  * e não o do servidor.
  */
+/** Se esta OS já tem apontamento nesta etapa, e quando foi a última vez. */
+export interface PassagemAnterior {
+  passou: boolean;
+  ultimoFim: string | null;
+}
+
 export interface FiltroConsulta {
   /** Busca parcial, usada pelos filtros do histórico. */
   os?: string;

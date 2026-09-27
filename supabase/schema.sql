@@ -151,11 +151,38 @@ revoke execute on function avancar_segmento(uuid, text, timestamptz, text, text)
   from public, anon, authenticated;
 
 -- ---------------------------------------------------------------------
--- Etapas de exemplo (opcional — remova se for cadastrar pelo painel)
+-- Cadastro inicial de etapas: as máquinas e os setores da gráfica
 -- ---------------------------------------------------------------------
 
 insert into etapas (nome) values
-  ('Impressão'),
-  ('Corte'),
-  ('Acabamento')
+  ('GOSS'),
+  ('Komori'),
+  ('SM'),
+  ('KBA'),
+  ('Dobradeira MBO'),
+  ('Dobradeira AR'),
+  ('Laminacao'),
+  ('Corte/Vinco Automatico'),
+  ('Corte/Vinco Manual'),
+  ('Alceadeira 10 gavetas'),
+  ('Alceadeira 5 gavetas'),
+  ('Alceadeira Torre'),
+  ('Guilhotina 115 Tiger'),
+  ('Guilhotina 115 [revisar]'),
+  ('Guilhotina [revisar]'),
+  ('Verniz Localizado'),
+  ('Grampeador Miruna'),
+  ('Desfoleadeira'),
+  ('Maquina de aplicar vareta'),
+  ('Cartucheira'),
+  ('Maquina de copo 01'),
+  ('Maquina de copo 02'),
+  ('Maquina de copo 03'),
+  ('Maquina de copo 04'),
+  ('Maquina de balde 5L'),
+  ('Coladeira PUR'),
+  ('Shirincadeira Autoamtica'),
+  ('Shirincadeira manual'),
+  ('Expedicao'),
+  ('Ricoh')
 on conflict (nome) do nothing;

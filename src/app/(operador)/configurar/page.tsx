@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import Icone from "@/components/Icone";
 import { listarEtapas } from "../../actions";
 import { gravarEtapaConfigurada, lerEtapaConfigurada } from "@/lib/maquina";
 import type { Etapa } from "@/lib/tipos";
@@ -37,11 +38,16 @@ export default function TelaConfiguracao() {
       <header className="op-cabecalho">
         <div className="op-cabecalho-esq">
           {atual && (
-            <Link href="/" className="op-voltar" title="Voltar para o apontamento">
-              ←
+            <Link
+              href="/"
+              className="op-voltar"
+              title="Voltar para o apontamento"
+              aria-label="Voltar para o apontamento"
+            >
+              <Icone nome="setaEsquerda" tamanho={19} />
             </Link>
           )}
-          <h1 className="op-etapa">Etapa da máquina</h1>
+          <h1 className="op-etapa">Onde você está</h1>
         </div>
         <Link href="/painel" className="op-link-discreto">
           Painel
@@ -49,8 +55,9 @@ export default function TelaConfiguracao() {
       </header>
 
       <p className="op-instrucao">
-        Escolha a etapa que esta máquina vai apontar. A escolha fica gravada neste
-        computador e a aplicação passa a abrir direto nela.
+        Toque na máquina ou no setor deste computador. Você faz isso uma vez só: da
+        próxima vez o sistema já abre direto nela. Se escolher errado, dá para trocar
+        pela seta no canto de cima.
       </p>
 
       {erro && <p className="op-aviso">{erro}</p>}
@@ -58,7 +65,8 @@ export default function TelaConfiguracao() {
 
       {!carregando && !erro && etapas.length === 0 && (
         <p className="op-aviso">
-          Nenhuma etapa ativa cadastrada. Cadastre uma etapa no painel de gestão.
+          Ainda não há nenhuma máquina cadastrada. Abra o Painel, entre em Etapas e
+          cadastre a primeira.
         </p>
       )}
 

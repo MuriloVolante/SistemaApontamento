@@ -1,7 +1,7 @@
 "use server";
 
 import { agora, repositorio, ErroUnicidade } from "@/lib/repositorio";
-import type { Etapa, EstadoEtapa, PainelAtivo, Resultado } from "@/lib/tipos";
+import type { Etapa, EstadoEtapa, PainelAtivo, PassagemAnterior, Resultado } from "@/lib/tipos";
 
 // =====================================================================
 // Etapas
@@ -96,6 +96,27 @@ export async function obterEstado(etapaId: string): Promise<EstadoEtapa> {
   const etapa = await repo.obterEtapa(etapaId);
   const sessao = etapa ? await repo.obterSessao(etapaId) : null;
   return { etapa, sessao, agora: agora().toISOString() };
+}
+
+/**
+ * Confere se esta OS já foi apontada nesta etapa antes.
+ *
+ * Serve de aviso na hora de iniciar: pode ser retrabalho, pode ser uma
+ * segunda passagem normal, e quem sabe disso é quem está na máquina. Não
+ * bloqueia nada — só informa.
+ */
+export async function conferirPassagem(
+  etapaId: string,
+  numeroOs: string
+): Promise<PassagemAnterior> {
+  const os = numeroOs.trim();
+  if (!os) return { passou: false, ultimoFim: null };
+
+  const linhas = await (await repositorio()).consultarApontamentos({ osExata: os, etapaId });
+  if (linhas.length === 0) return { passou: false, ultimoFim: null };
+
+  // A consulta vem ordenada por início, então o último registro tem o fim mais recente.
+  return { passou: true, ultimoFim: linhas[linhas.length - 1].fim };
 }
 
 export async function iniciar(etapaId: string, numeroOs: string): Promise<Resultado<EstadoEtapa>> {

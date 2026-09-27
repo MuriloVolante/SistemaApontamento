@@ -54,14 +54,14 @@ export default function ModalRelatorio({ herdado, aoFechar }: Props) {
       if (qual === "ANALITICO") {
         const { linhas, totais } = await consultarApontamentos(filtro());
         if (linhas.length === 0) {
-          setErro("Nenhum apontamento para os parâmetros informados.");
+          setErro("Não há nada gravado com esses filtros. Tente outras datas.");
           return;
         }
         gerarPdfAnalitico(linhas, totais, [...criterios(), `Registros: ${linhas.length}`]);
       } else {
         const linhas = await relatorioSintetico(filtro());
         if (linhas.length === 0) {
-          setErro("Nenhum apontamento para os parâmetros informados.");
+          setErro("Não há nada gravado com esses filtros. Tente outras datas.");
           return;
         }
         gerarPdfSintetico(linhas, criterios());
@@ -77,10 +77,10 @@ export default function ModalRelatorio({ herdado, aoFechar }: Props) {
   const ocupado = gerando !== "";
 
   return (
-    <Modal titulo="Gerar relatório" aoFechar={aoFechar}>
+    <Modal titulo="Gerar relatório em PDF" aoFechar={aoFechar}>
       {/* Os filtros da tela entram prontos; aqui só se escolhe o período. */}
       <div className="modal-herdado">
-        <span className="modal-herdado-titulo">Filtros desta consulta</span>
+        <span className="modal-herdado-titulo">O que vai entrar no relatório</span>
         <div className="modal-fichas">
           <span className="ficha">
             OS: <strong>{herdado.os.trim() || "todas"}</strong>
@@ -97,7 +97,7 @@ export default function ModalRelatorio({ herdado, aoFechar }: Props) {
       <div className="modal-periodo">
         <div>
           <label className="campo-rotulo" htmlFor="rel-inicio">
-            Data Início
+            A partir de
           </label>
           <input
             id="rel-inicio"
@@ -109,7 +109,7 @@ export default function ModalRelatorio({ herdado, aoFechar }: Props) {
         </div>
         <div>
           <label className="campo-rotulo" htmlFor="rel-fim">
-            Data Fim
+            Até
           </label>
           <input
             id="rel-fim"
@@ -134,8 +134,10 @@ export default function ModalRelatorio({ herdado, aoFechar }: Props) {
             <Icone nome="relatorio" tamanho={20} />
           </span>
           <span className="relatorio-opcao-texto">
-            <strong>{gerando === "ANALITICO" ? "Gerando…" : "Analítico"}</strong>
-            Um apontamento por linha, com os três totais no cabeçalho.
+            <strong>{gerando === "ANALITICO" ? "Gerando…" : "Detalhado"}</strong>
+            Tudo linha por linha: cada vez que a máquina rodou e cada vez que parou,
+            com hora de início, hora de fim e o motivo de cada parada. É o relatório
+            para conferir o que aconteceu.
           </span>
         </button>
 
@@ -149,8 +151,10 @@ export default function ModalRelatorio({ herdado, aoFechar }: Props) {
             <Icone nome="etapa" tamanho={20} />
           </span>
           <span className="relatorio-opcao-texto">
-            <strong>{gerando === "SINTETICO" ? "Gerando…" : "Sintético"}</strong>
-            Uma linha por etapa: total, operação e pausa, com o consolidado.
+            <strong>{gerando === "SINTETICO" ? "Gerando…" : "Resumo"}</strong>
+            Uma linha por etapa — ou seja, por máquina ou setor: o tempo total, quanto
+            tempo rodou e quanto tempo ficou parada. É o relatório para bater o olho e
+            comparar.
           </span>
         </button>
       </div>

@@ -50,7 +50,43 @@ create index if not exists apontamentos_numero_os_idx on apontamentos (numero_os
 create index if not exists apontamentos_inicio_idx    on apontamentos (inicio);
 `;
 
-const ETAPAS_INICIAIS = ["Impressão", "Corte", "Acabamento"];
+/**
+ * Etapas criadas na primeira execução, quando o banco ainda está vazio: são as
+ * máquinas e os setores da gráfica. Depois disso quem manda é o cadastro do
+ * painel — esta lista não volta a ser consultada.
+ */
+const ETAPAS_INICIAIS = [
+  "GOSS",
+  "Komori",
+  "SM",
+  "KBA",
+  "Dobradeira MBO",
+  "Dobradeira AR",
+  "Laminacao",
+  "Corte/Vinco Automatico",
+  "Corte/Vinco Manual",
+  "Alceadeira 10 gavetas",
+  "Alceadeira 5 gavetas",
+  "Alceadeira Torre",
+  "Guilhotina 115 Tiger",
+  "Guilhotina 115 [revisar]",
+  "Guilhotina [revisar]",
+  "Verniz Localizado",
+  "Grampeador Miruna",
+  "Desfoleadeira",
+  "Maquina de aplicar vareta",
+  "Cartucheira",
+  "Maquina de copo 01",
+  "Maquina de copo 02",
+  "Maquina de copo 03",
+  "Maquina de copo 04",
+  "Maquina de balde 5L",
+  "Coladeira PUR",
+  "Shirincadeira Autoamtica",
+  "Shirincadeira manual",
+  "Expedicao",
+  "Ricoh",
+];
 
 interface EtapaBruta {
   id: string;
