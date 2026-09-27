@@ -44,6 +44,13 @@ const OPCOES: Array<{
   },
 ];
 
+type Formato = "PDF" | "EXCEL";
+
+const FORMATOS: Array<{ valor: Formato; rotulo: string }> = [
+  { valor: "PDF", rotulo: "PDF" },
+  { valor: "EXCEL", rotulo: "Excel" },
+];
+
 const ROTULO_TIPO: Record<string, string> = {
   "": "Todos",
   OPERACAO: "Operação",
@@ -73,6 +80,10 @@ export default function ModalRelatorio({ herdado, etapas, aoFechar }: Props) {
     return { os, etapaId, tipo, deISO, ateISO };
   }
 
+  // PDF é o relatório para ler e imprimir, no desenho dos modelos; Excel é só
+  // a tabela, para quem vai trabalhar os números.
+  const [formato, setFormato] = useState<Formato>("PDF");
+
   function criterios(): CriteriosRelatorio {
     return { de: dataInicio, ate: dataFim, os, etapa: nomeEtapa, tipo: ROTULO_TIPO[tipo] };
   }
@@ -87,24 +98,34 @@ export default function ModalRelatorio({ herdado, etapas, aoFechar }: Props) {
     setGerando(qual);
     setErro(null);
     try {
-      // Carregado só aqui: o jsPDF é a parte mais pesada do Histórico, e quem
-      // abre a tela só para consultar não precisa baixá-lo.
-      const { gerarPdfAnalitico, gerarPdfSintetico } = await import("@/lib/pdf");
-
+      // Os geradores são carregados só aqui: são a parte mais pesada do
+      // Histórico, e quem abre a tela só para consultar não precisa deles.
       if (qual === "ANALITICO") {
         const { linhas, totais } = await consultarApontamentos(filtro());
         if (linhas.length === 0) {
           setErro("Não há nada gravado com esses filtros. Tente outras datas.");
           return;
         }
-        await gerarPdfAnalitico(linhas, totais, criterios());
+        if (formato === "PDF") {
+          const { gerarPdfAnalitico } = await import("@/lib/pdf");
+          await gerarPdfAnalitico(linhas, totais, criterios());
+        } else {
+          const { gerarExcelAnalitico } = await import("@/lib/excel");
+          await gerarExcelAnalitico(linhas);
+        }
       } else {
         const linhas = await relatorioSintetico(filtro());
         if (linhas.length === 0) {
           setErro("Não há nada gravado com esses filtros. Tente outras datas.");
           return;
         }
-        await gerarPdfSintetico(linhas, criterios());
+        if (formato === "PDF") {
+          const { gerarPdfSintetico } = await import("@/lib/pdf");
+          await gerarPdfSintetico(linhas, criterios());
+        } else {
+          const { gerarExcelSintetico } = await import("@/lib/excel");
+          await gerarExcelSintetico(linhas);
+        }
       }
       aoFechar();
     } catch {
@@ -117,7 +138,7 @@ export default function ModalRelatorio({ herdado, etapas, aoFechar }: Props) {
   const ocupado = gerando !== "";
 
   return (
-    <Modal titulo="Gerar relatório em PDF" aoFechar={aoFechar}>
+    <Modal titulo="Gerar relatório" aoFechar={aoFechar}>
       {/* Os filtros da tela entram prontos e continuam editáveis aqui. */}
       <div className="modal-filtros">
         <div className="modal-filtro modal-filtro--largo">
@@ -225,6 +246,23 @@ export default function ModalRelatorio({ herdado, etapas, aoFechar }: Props) {
             </button>
             {gerando !== o.qual && <Dica sobre={`o relatório ${o.nome.toLowerCase()}`}>{o.dica}</Dica>}
           </div>
+        ))}
+      </div>
+
+      {/* Chave de dois lados: o formato vale para o relatório que for clicado. */}
+      <div className="formato-chave" role="radiogroup" aria-label="Formato do arquivo">
+        {FORMATOS.map((f) => (
+          <button
+            key={f.valor}
+            type="button"
+            role="radio"
+            aria-checked={formato === f.valor}
+            className={`formato-opcao ${formato === f.valor ? "formato-opcao--marcada" : ""}`}
+            onClick={() => setFormato(f.valor)}
+            disabled={ocupado}
+          >
+            {f.rotulo}
+          </button>
         ))}
       </div>
 

@@ -107,7 +107,7 @@ alteradas depois, por decisão do dono do sistema, e a alteração está anotada
 | Aplicação | Next.js 15 (App Router) + React 19 + TypeScript |
 | Banco (local) | SQLite em arquivo, via `better-sqlite3` |
 | Banco (nuvem, opcional) | Supabase / Postgres |
-| Relatórios | jsPDF + jspdf-autotable, carregados só na hora de gerar |
+| Relatórios | jsPDF + jspdf-autotable (PDF) e write-excel-file (Excel), carregados só na hora de gerar |
 | Tempo real | Server-Sent Events (nativo, sem biblioteca) |
 | Tipografia | IBM Plex Sans, hospedada no próprio projeto |
 
@@ -307,9 +307,15 @@ diálogo recusa período com início depois do fim. Os dois relatórios:
 - **Sintético** (folha em pé): uma linha por etapa com tempo total, em
   operação e pausado, fechando com o total consolidado.
 
-Os dois seguem os modelos aprovados: título e logotipo no topo, data de
-emissão, e uma caixa com os filtros usados (período, OS, etapa e tipo, e no
-analítico também o número de registros), cada um com o seu ícone.
+Abaixo das opções, uma chave escolhe o formato, com **PDF** marcado ao abrir:
+
+- **PDF** segue os modelos aprovados: título e logotipo no topo, data de
+  emissão, e uma caixa com os filtros usados (período, OS, etapa e tipo, e no
+  analítico também o número de registros), cada um com o seu ícone.
+- **Excel** (`.xlsx`) traz só a tabela: a linha com os títulos das colunas e
+  os dados, sem título, logotipo nem filtros. Datas, horas e durações vão
+  como valores do próprio Excel (`dd/mm/aaaa` e `00:00:00`), então a planilha
+  soma e ordena direito; a duração não volta a zero depois de 24 horas.
 
 O **ⓘ** ao lado de cada nome explica o relatório ao passar o mouse ou tocar.
 
@@ -548,6 +554,7 @@ src/
     agrupar.ts               junta eventos em blocos de OS, etapa e dia
     tempo.ts                 durações, diferenças e limites de data
     pdf.ts                   relatórios analítico e sintético, com o logotipo
+    excel.ts                 os mesmos relatórios em .xlsx, só a tabela
     marca.ts                 desenho da marca Mautus (fonte única da logo)
     maquina.ts               etapa configurada no localStorage
     tipos.ts                 tipos compartilhados

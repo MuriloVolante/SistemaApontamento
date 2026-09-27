@@ -2463,6 +2463,52 @@ table.tabela tbody tr:last-child td {
   color: var(--tinta);
 }
 
+/* Chave PDF | Excel: na largura das opções, com o lado marcado no mesmo azul
+   do card de total aceso. */
+.formato-chave {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  margin-top: 10px;
+  padding: 4px;
+  background: var(--superficie-3);
+  border: 1px solid var(--borda-media);
+  border-radius: var(--raio);
+}
+
+.formato-opcao {
+  height: 36px;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--tinta-media);
+  background: none;
+  border: none;
+  border-radius: calc(var(--raio) - 2px);
+  cursor: pointer;
+  transition: background var(--normal), color var(--normal), box-shadow var(--normal);
+}
+
+.formato-opcao:hover:not(.formato-opcao--marcada):not(:disabled) {
+  color: var(--tinta);
+  background: var(--superficie);
+}
+
+.formato-opcao:focus-visible {
+  outline: none;
+  box-shadow: var(--anel);
+}
+
+.formato-opcao--marcada {
+  color: #fff;
+  background: var(--acento);
+  box-shadow: var(--sombra-p);
+}
+
+.formato-opcao:disabled {
+  cursor: not-allowed;
+}
+
 /* ---------------------------------------------------------------------
    Dica de canto: o "i" que explica sem ocupar a tela
    --------------------------------------------------------------------- */

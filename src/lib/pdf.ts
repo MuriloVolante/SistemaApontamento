@@ -2,7 +2,7 @@ import jsPDF from "jspdf";
 import { autoTable } from "jspdf-autotable";
 import type { CellHookData } from "jspdf-autotable";
 import { LOGOTIPO } from "./marca";
-import { formatarData, formatarDuracao, formatarHora } from "./tempo";
+import { carimbo, formatarData, formatarDuracao, formatarHora } from "./tempo";
 import type { LinhaApontamento, LinhaSintetico, Totais } from "./tipos";
 
 /**
@@ -33,14 +33,6 @@ export interface CriteriosRelatorio {
   os: string;
   etapa: string;
   tipo: string;
-}
-
-function carimbo(): string {
-  const d = new Date();
-  const p = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(
-    d.getMinutes()
-  )}`;
 }
 
 const dataCurta = (dia: string) => formatarData(`${dia}T12:00:00`);

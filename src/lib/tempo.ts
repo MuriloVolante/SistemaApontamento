@@ -88,3 +88,12 @@ export function formatarDuracaoCurta(segundosTotais: number): string {
   if (m > 0) return `${dd(m)}m ${dd(seg)}s`;
   return `${dd(seg)}s`;
 }
+
+/** Data e hora de agora no nome dos arquivos de relatório: 20260927-2014. */
+export function carimbo(): string {
+  const d = new Date();
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(
+    d.getMinutes()
+  )}`;
+}
