@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useState } from "react";
 import { usePathname } from "next/navigation";
 
 interface Props {
@@ -23,15 +23,26 @@ interface Props {
  */
 export default function Transicao({ ordem, children }: Props) {
   const caminho = usePathname();
-  const anterior = useRef(caminho);
+
+  // O caminho anterior e o sentido calculado para ele ficam em estado. Antes
+  // eram uma ref escrita durante o render, o que não é puro: no modo estrito
+  // o React renderiza duas vezes, e a segunda já via a ref atualizada pela
+  // primeira e calculava o sentido errado.
+  const [troca, setTroca] = useState({ caminho, voltando: false });
 
   const posicao = (c: string) => {
     const i = ordem.indexOf(c);
     return i === -1 ? ordem.length : i;
   };
 
-  const voltando = posicao(caminho) < posicao(anterior.current);
-  anterior.current = caminho;
+  let voltando = troca.voltando;
+  if (troca.caminho !== caminho) {
+    // Padrão do React para derivar estado da troca de uma propriedade: o
+    // estado é acertado durante o render e o React refaz o render na hora,
+    // antes de pintar, já com o valor novo.
+    voltando = posicao(caminho) < posicao(troca.caminho);
+    setTroca({ caminho, voltando });
+  }
 
   return (
     // A chave troca a cada rota: o React monta um nó novo e a animação de

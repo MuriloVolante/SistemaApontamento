@@ -462,6 +462,15 @@ textarea {
   background: var(--verde-escuro);
 }
 
+/* Botão que na verdade é link (trocar de máquina): mesmo desenho. */
+.op-botao--link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 14px;
+  text-decoration: none;
+}
+
 .op-botao--finalizar:not(:disabled) {
   background: var(--superficie);
   color: var(--tinta-media);
@@ -597,6 +606,12 @@ textarea {
   max-height: 92vh;
   overflow-y: auto;
   animation: entrar-modal 220ms var(--saida-suave) both;
+}
+
+/* O foco entra na caixa ao abrir só para o teclado ter por onde começar;
+   não é um campo, então não merece contorno. */
+.modal-caixa:focus {
+  outline: none;
 }
 
 .modal-titulo {
@@ -1453,6 +1468,14 @@ table.tabela tbody tr:last-child td {
   animation: surgir 200ms var(--saida-suave) both;
 }
 
+/* Consulta periódica: está tudo funcionando, só não é instantâneo. Tom de
+   informação, não de alerta. */
+.reconectando--reserva {
+  color: var(--tinta-media);
+  background: var(--superficie-3);
+  border-color: var(--borda-media);
+}
+
 .reconectando::before {
   content: "";
   width: 7px;
@@ -1460,6 +1483,12 @@ table.tabela tbody tr:last-child td {
   border-radius: 50%;
   background: var(--ambar);
   animation: pulsar 1.8s ease-out infinite;
+}
+
+/* Na consulta periódica o ponto fica parado: nada está falhando. */
+.reconectando--reserva::before {
+  background: var(--tinta-fraca);
+  animation: none;
 }
 
 /* ---------------------------------------------------------------------
@@ -2046,6 +2075,19 @@ table.tabela tbody tr:last-child td {
   margin-top: 16px;
 }
 
+/* Gestão de etapas. */
+.linha-acoes--espacada {
+  margin-bottom: 16px;
+}
+
+.campo--estreito {
+  max-width: 320px;
+}
+
+.campo--flexivel {
+  flex: 1 1 220px;
+}
+
 .novo-usuario {
   display: flex;
   flex-wrap: wrap;
@@ -2143,9 +2185,13 @@ table.tabela tbody tr:last-child td {
   transition: background var(--rapido), color var(--rapido);
 }
 
-.menu-item:hover:not(:disabled) {
+/* Foco de teclado igual ao passar do mouse: quem navega pelas setas
+   precisa ver onde está. */
+.menu-item:hover:not(:disabled),
+.menu-item:focus-visible {
   color: var(--tinta);
   background: var(--superficie-3);
+  outline: none;
 }
 
 .menu-item:disabled {

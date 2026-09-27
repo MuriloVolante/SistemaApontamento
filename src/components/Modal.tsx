@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 interface Props {
@@ -24,14 +24,22 @@ interface Props {
  */
 export default function Modal({ titulo, aoFechar, children, variante = "centro" }: Props) {
   const [montado, setMontado] = useState(false);
+  const caixa = useRef<HTMLDivElement>(null);
+
+  // `aoFechar` costuma chegar como função nova a cada render. Guardada numa
+  // ref, os efeitos abaixo rodam uma vez só: antes, na tela do operador, que
+  // redesenha a cada meio segundo, os ouvintes e a trava de rolagem eram
+  // desfeitos e refeitos duas vezes por segundo.
+  const aoFecharAtual = useRef(aoFechar);
+  useLayoutEffect(() => {
+    aoFecharAtual.current = aoFechar;
+  });
 
   useEffect(() => setMontado(true), []);
 
-  const fechar = useCallback(() => aoFechar(), [aoFechar]);
-
   useEffect(() => {
     const aoTeclar = (e: KeyboardEvent) => {
-      if (e.key === "Escape") fechar();
+      if (e.key === "Escape") aoFecharAtual.current();
     };
     document.addEventListener("keydown", aoTeclar);
 
@@ -43,7 +51,24 @@ export default function Modal({ titulo, aoFechar, children, variante = "centro" 
       document.removeEventListener("keydown", aoTeclar);
       document.body.style.overflow = rolagemAnterior;
     };
-  }, [fechar]);
+  }, []);
+
+  // Foco: entra no diálogo ao abrir e volta para onde estava ao fechar. Quem
+  // usa teclado ou leitor de tela não fica perdido atrás do escurecido.
+  useEffect(() => {
+    if (!montado) return;
+    const antes = document.activeElement as HTMLElement | null;
+
+    // Um campo com `autoFocus` dentro do diálogo já pegou o foco; só quando
+    // nada lá dentro o tem é que a própria caixa o recebe.
+    if (caixa.current && !caixa.current.contains(document.activeElement)) {
+      caixa.current.focus();
+    }
+
+    return () => {
+      if (antes && document.contains(antes)) antes.focus();
+    };
+  }, [montado]);
 
   if (!montado) return null;
 
@@ -54,10 +79,14 @@ export default function Modal({ titulo, aoFechar, children, variante = "centro" 
       aria-modal="true"
       aria-label={titulo}
       onMouseDown={(e) => {
-        if (e.target === e.currentTarget) fechar();
+        if (e.target === e.currentTarget) aoFecharAtual.current();
       }}
     >
-      <div className={`modal-caixa ${variante === "inferior" ? "modal-caixa--inferior" : ""}`}>
+      <div
+        ref={caixa}
+        tabIndex={-1}
+        className={`modal-caixa ${variante === "inferior" ? "modal-caixa--inferior" : ""}`}
+      >
         {variante === "inferior" && <span className="modal-puxador" aria-hidden="true" />}
         <h2 className="modal-titulo">{titulo}</h2>
         {children}

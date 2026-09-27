@@ -5,13 +5,12 @@ import Modal from "@/components/Modal";
 import Icone from "@/components/Icone";
 import Dica from "@/components/Dica";
 import { consultarApontamentos, relatorioSintetico } from "@/app/consultas";
-import { gerarPdfAnalitico, gerarPdfSintetico } from "@/lib/pdf";
 import { formatarData, limitesLocais } from "@/lib/tempo";
 import type { Etapa, Tipo } from "@/lib/tipos";
 
 interface Props {
   /** Filtros que já estão valendo na tela: entram prontos, sem redigitar. */
-  herdado: { os: string; etapaId: string; tipo: "" | Tipo };
+  herdado: { os: string; etapaId: string; tipo: "" | Tipo; data: string };
   /** Para o seletor de etapa do próprio diálogo. */
   etapas: Etapa[];
   aoFechar: () => void;
@@ -51,8 +50,11 @@ const ROTULO_TIPO: Record<string, string> = {
 };
 
 export default function ModalRelatorio({ herdado, etapas, aoFechar }: Props) {
-  const [dataInicio, setDataInicio] = useState("");
-  const [dataFim, setDataFim] = useState("");
+  // A data filtrada na tela vira o período do relatório, de um dia só. O
+  // diálogo dizia que os filtros da tela entravam prontos, e a data ficava
+  // de fora.
+  const [dataInicio, setDataInicio] = useState(herdado.data);
+  const [dataFim, setDataFim] = useState(herdado.data);
 
   // Os filtros da tela são o ponto de partida, não uma amarra: o relatório
   // costuma ser um recorte vizinho do que se estava olhando, e obrigar a
@@ -87,9 +89,19 @@ export default function ModalRelatorio({ herdado, etapas, aoFechar }: Props) {
   }
 
   async function gerar(qual: "ANALITICO" | "SINTETICO") {
+    // Datas no formato AAAA-MM-DD comparam certo como texto.
+    if (dataInicio && dataFim && dataInicio > dataFim) {
+      setErro("A data inicial está depois da final. Confira o período.");
+      return;
+    }
+
     setGerando(qual);
     setErro(null);
     try {
+      // Carregado só aqui: o jsPDF é a parte mais pesada do Histórico, e quem
+      // abre a tela só para consultar não precisa baixá-lo.
+      const { gerarPdfAnalitico, gerarPdfSintetico } = await import("@/lib/pdf");
+
       if (qual === "ANALITICO") {
         const { linhas, totais } = await consultarApontamentos(filtro());
         if (linhas.length === 0) {
@@ -106,8 +118,8 @@ export default function ModalRelatorio({ herdado, etapas, aoFechar }: Props) {
         gerarPdfSintetico(linhas, criterios());
       }
       aoFechar();
-    } catch (e) {
-      setErro((e as Error).message);
+    } catch {
+      setErro("Não foi possível gerar o relatório agora. Tente de novo.");
     } finally {
       setGerando("");
     }

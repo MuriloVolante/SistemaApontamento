@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Icone from "@/components/Icone";
 import CardsTotais from "./Totais";
 import { buscarOs } from "../consultas";
@@ -54,16 +54,18 @@ export default function BuscaOs({
     }
   }
 
-  // Um apontamento novo pode ser justamente desta OS: refaz a consulta.
+  // Um apontamento novo pode ser justamente desta OS: refaz a consulta. Só a
+  // revisão dispara; a OS buscada é lida da ref, com o valor de agora.
+  const buscadaRef = useRef(buscada);
+  buscadaRef.current = buscada;
   useEffect(() => {
-    if (!buscada) return;
-    buscarOs(buscada)
+    const os = buscadaRef.current;
+    if (!os) return;
+    buscarOs(os)
       .then(setResultado)
       .catch(() => {
         /* a próxima revisão tenta de novo */
       });
-    // `buscada` é reconsultada apenas quando a revisão muda.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [revisao]);
 
   useEffect(() => {
@@ -81,8 +83,9 @@ export default function BuscaOs({
     { rotulo: "#", numerica: true },
     { rotulo: "Etapa" },
     { rotulo: "Tipo" },
-    { rotulo: "Data" },
+    { rotulo: "Data Início" },
     { rotulo: "Hora Início", numerica: true },
+    { rotulo: "Data Fim" },
     { rotulo: "Hora Fim", numerica: true },
     ...(consultaApenas
       ? []
@@ -90,7 +93,9 @@ export default function BuscaOs({
   ];
 
   // A situação vem do fluxo ao vivo, então o cronômetro corre sem reconsultar.
-  const emCurso = buscada ? sessoesAoVivo.find((s) => s.numero_os === buscada) ?? null : null;
+  // Todas as máquinas onde a OS está agora: a mesma OS pode rodar em duas
+  // etapas ao mesmo tempo, e mostrar só a primeira escondia a outra.
+  const emCurso = buscada ? sessoesAoVivo.filter((s) => s.numero_os === buscada) : [];
 
   return (
     <>
@@ -127,50 +132,53 @@ export default function BuscaOs({
 
       {resultado && (
         <section className="busca-resultado">
-          {/* Onde a OS está agora */}
-          <article
-            className={`situacao-os ${
-              emCurso
-                ? emCurso.status === "PAUSADO"
-                  ? "situacao-os--pausado"
-                  : "situacao-os--andamento"
-                : "situacao-os--parado"
-            }`}
-          >
-            <div className="situacao-os-icone">
-              <Icone nome="caixa" tamanho={26} />
-            </div>
-
-            <div className="situacao-os-texto">
-              <span className="situacao-os-rotulo">{resultado.os}</span>
-              {emCurso ? (
-                <>
-                  <strong className="situacao-os-etapa">{emCurso.etapa_nome}</strong>
-                  <span className="situacao-os-detalhe">
-                    {emCurso.status === "PAUSADO"
-                      ? `Pausado${emCurso.motivo ? ` · ${emCurso.motivo}` : ""}`
-                      : "Em andamento"}{" "}
-                    · desde {formatarHora(emCurso.segmento_inicio)}
-                  </span>
-                </>
-              ) : (
-                <>
-                  <strong className="situacao-os-etapa">Não está em operação</strong>
-                  <span className="situacao-os-detalhe">
-                    {resultado.linhas.length > 0
-                      ? `Última etapa: ${resultado.linhas[resultado.linhas.length - 1].etapa_nome}`
-                      : "Nenhum apontamento registrado para esta OS"}
-                  </span>
-                </>
-              )}
-            </div>
-
-            {emCurso && !consultaApenas && (
-              <div className="situacao-os-cronometro">
-                {formatarDuracao(diferencaEmSegundos(emCurso.segmento_inicio, agoraCorrigido()))}
+          {/* Onde a OS está agora: um cartão por máquina em que ela roda. */}
+          {emCurso.length === 0 ? (
+            <article className="situacao-os situacao-os--parado">
+              <div className="situacao-os-icone">
+                <Icone nome="caixa" tamanho={26} />
               </div>
-            )}
-          </article>
+              <div className="situacao-os-texto">
+                <span className="situacao-os-rotulo">{resultado.os}</span>
+                <strong className="situacao-os-etapa">Não está em operação</strong>
+                <span className="situacao-os-detalhe">
+                  {resultado.linhas.length > 0
+                    ? `Última etapa: ${resultado.linhas[resultado.linhas.length - 1].etapa_nome}`
+                    : "Nenhum apontamento registrado para esta OS"}
+                </span>
+              </div>
+            </article>
+          ) : (
+            emCurso.map((sessao) => (
+              <article
+                key={sessao.etapa_id}
+                className={`situacao-os ${
+                  sessao.status === "PAUSADO" ? "situacao-os--pausado" : "situacao-os--andamento"
+                }`}
+              >
+                <div className="situacao-os-icone">
+                  <Icone nome="caixa" tamanho={26} />
+                </div>
+
+                <div className="situacao-os-texto">
+                  <span className="situacao-os-rotulo">{resultado.os}</span>
+                  <strong className="situacao-os-etapa">{sessao.etapa_nome}</strong>
+                  <span className="situacao-os-detalhe">
+                    {sessao.status === "PAUSADO"
+                      ? `Pausado${sessao.motivo ? ` · ${sessao.motivo}` : ""}`
+                      : "Em andamento"}{" "}
+                    · desde {formatarHora(sessao.segmento_inicio)}
+                  </span>
+                </div>
+
+                {!consultaApenas && (
+                  <div className="situacao-os-cronometro">
+                    {formatarDuracao(diferencaEmSegundos(sessao.segmento_inicio, agoraCorrigido()))}
+                  </div>
+                )}
+              </article>
+            ))
+          )}
 
           {!consultaApenas && <CardsTotais totais={resultado.totais} />}
 
@@ -216,6 +224,7 @@ export default function BuscaOs({
                         </td>
                         <td>{formatarData(l.inicio)}</td>
                         <td className="col-num">{formatarHora(l.inicio)}</td>
+                        <td>{formatarData(l.fim)}</td>
                         <td className="col-num">{formatarHora(l.fim)}</td>
                         {!consultaApenas && (
                           <>

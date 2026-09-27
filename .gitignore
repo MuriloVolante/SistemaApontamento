@@ -14,3 +14,6 @@ next-env.d.ts
 
 # Banco local (SQLite): cada maquina tem o seu
 dados/
+
+# Configuracao local da ferramenta de preview do editor
+.claude/launch.json

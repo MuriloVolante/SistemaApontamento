@@ -22,7 +22,7 @@ const INTERVALO_SINCRONIA = 30_000;
  */
 function comoOs(numero: string): string {
   const n = numero.trim();
-  return /^os|^os-/i.test(n) ? n : `OS ${n}`;
+  return /^os/i.test(n) ? n : `OS ${n}`;
 }
 
 /**
@@ -171,14 +171,7 @@ export default function TelaOperador() {
         </p>
         <Link
           href="/configurar"
-          className="op-botao op-botao--retomar"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            textDecoration: "none",
-            marginTop: 14,
-          }}
+          className="op-botao op-botao--retomar op-botao--link"
         >
           Escolher máquina
         </Link>

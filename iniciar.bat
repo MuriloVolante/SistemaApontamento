@@ -10,6 +10,12 @@ echo.
 if not exist "node_modules" (
   echo Primeira execucao: instalando dependencias. Isso leva 1-2 minutos.
   call npm install
+  if errorlevel 1 (
+    echo.
+    echo A instalacao das dependencias falhou. Confira a internet e rode de novo.
+    pause
+    exit /b 1
+  )
   echo.
 )
 

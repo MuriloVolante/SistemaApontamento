@@ -32,10 +32,6 @@ export function formatarHora(iso: string): string {
   });
 }
 
-export function formatarDataHora(iso: string): string {
-  return `${formatarData(iso)} ${formatarHora(iso)}`;
-}
-
 /** Data local (YYYY-MM-DD) de um instante, para comparar com o filtro de data. */
 export function dataLocalISO(iso: string): string {
   const d = new Date(iso);

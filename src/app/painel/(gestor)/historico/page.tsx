@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { listarEtapas } from "@/app/actions";
 import { consultarApontamentos } from "@/app/consultas";
 import CardsTotais from "@/app/painel/Totais";
+import { LIMITES } from "@/lib/nomes";
 import type { Recorte } from "@/app/painel/Totais";
 import CartoesOs from "./CartoesOs";
 import ModalRelatorio from "./ModalRelatorio";
@@ -32,6 +33,7 @@ type Coluna =
   | "tipo"
   | "data"
   | "inicio"
+  | "dataFim"
   | "fim"
   | "duracao"
   | "justificativa";
@@ -49,8 +51,11 @@ const COLUNAS: Array<{
   { chave: "os", rotulo: "Número OS", valor: (l) => l.numero_os },
   { chave: "etapa", rotulo: "Etapa", valor: (l) => l.etapa_nome },
   { chave: "tipo", rotulo: "Tipo", valor: (l) => (l.tipo === "OPERACAO" ? "Operação" : "Pausa") },
-  { chave: "data", rotulo: "Data", valor: (l) => dataLocalISO(l.inicio) },
+  { chave: "data", rotulo: "Data Início", valor: (l) => dataLocalISO(l.inicio) },
   { chave: "inicio", rotulo: "Hora Início", numerica: true, valor: (l) => segundosDoDia(l.inicio) },
+  // Separada da data de início porque um segmento pode atravessar a meia-noite:
+  // começa num dia, termina no outro, e conta no dia em que começou.
+  { chave: "dataFim", rotulo: "Data Fim", valor: (l) => dataLocalISO(l.fim) },
   { chave: "fim", rotulo: "Hora Fim", numerica: true, valor: (l) => segundosDoDia(l.fim) },
   { chave: "duracao", rotulo: "Tempo Total", numerica: true, valor: (l) => l.duracao_segundos },
   { chave: "justificativa", rotulo: "Justificativa", valor: (l) => l.justificativa ?? "" },
@@ -59,9 +64,16 @@ const COLUNAS: Array<{
 export default function Historico() {
   const [etapas, setEtapas] = useState<Etapa[]>([]);
 
+  // O que está no campo, a cada tecla, e o que de fato vai para a consulta:
+  // este segundo só muda 300 ms depois da última tecla. Sem isso, digitar
+  // "12345" disparava cinco consultas, a primeira delas trazendo tudo que
+  // tivesse "1".
+  const [osDigitada, setOsDigitada] = useState("");
   const [os, setOs] = useState("");
   const [etapaId, setEtapaId] = useState("");
-  const [data, setData] = useState("");
+  // Abre no dia de hoje: sem data, a primeira consulta trazia a tabela inteira,
+  // e ela só cresce. Apagar a data mostra tudo, como antes.
+  const [data, setData] = useState(() => dataLocalISO(new Date().toISOString()));
   // O tipo não tem campo próprio: quem controla são os cards de total.
   const [recorte, setRecorte] = useState<Recorte>(null);
 
@@ -96,10 +108,15 @@ export default function Historico() {
     return { os, etapaId, deISO, ateISO };
   }, [os, etapaId, data]);
 
+  useEffect(() => {
+    const espera = window.setTimeout(() => setOs(osDigitada), 300);
+    return () => window.clearTimeout(espera);
+  }, [osDigitada]);
+
   const carregarEtapas = useCallback(() => {
     listarEtapas(false)
       .then(setEtapas)
-      .catch((e: Error) => setErro(e.message));
+      .catch(() => setErro("Não foi possível carregar as etapas agora."));
   }, []);
 
   useEffect(() => {
@@ -118,9 +135,9 @@ export default function Historico() {
         setTotais(r.totais);
         setPagina(1);
       })
-      .catch((e: Error) => {
+      .catch(() => {
         if (!cancelado) {
-          setErro(e.message);
+          setErro("Não foi possível carregar o histórico agora. Tente de novo.");
           setLinhas([]);
           setTotais(TOTAIS_ZERADOS);
         }
@@ -172,9 +189,10 @@ export default function Historico() {
   const linhasDaPagina = linhasVisiveis.slice(primeiroIndice, primeiroIndice + POR_PAGINA);
 
   const filtrosAtivos =
-    (os.trim() ? 1 : 0) + (etapaId ? 1 : 0) + (data ? 1 : 0) + (recorte ? 1 : 0);
+    (osDigitada.trim() ? 1 : 0) + (etapaId ? 1 : 0) + (data ? 1 : 0) + (recorte ? 1 : 0);
 
   function limparFiltros() {
+    setOsDigitada("");
     setOs("");
     setEtapaId("");
     setData("");
@@ -192,8 +210,9 @@ export default function Historico() {
           className="campo"
           type="text"
           placeholder="Busca parcial"
-          value={os}
-          onChange={(e) => setOs(e.target.value)}
+          maxLength={LIMITES.os}
+          value={osDigitada}
+          onChange={(e) => setOsDigitada(e.target.value)}
         />
       </div>
 
@@ -370,6 +389,7 @@ export default function Historico() {
                         </td>
                         <td>{formatarData(l.inicio)}</td>
                         <td className="col-num">{formatarHora(l.inicio)}</td>
+                        <td>{formatarData(l.fim)}</td>
                         <td className="col-num">{formatarHora(l.fim)}</td>
                         <td className="col-num">{formatarDuracao(l.duracao_segundos)}</td>
                         <td className="col-justificativa">{l.justificativa ?? ""}</td>
@@ -436,7 +456,7 @@ export default function Historico() {
 
       {relatorioAberto && (
         <ModalRelatorio
-          herdado={{ os, etapaId, tipo: recorte ?? "" }}
+          herdado={{ os: osDigitada, etapaId, tipo: recorte ?? "", data }}
           etapas={etapas}
           aoFechar={() => setRelatorioAberto(false)}
         />

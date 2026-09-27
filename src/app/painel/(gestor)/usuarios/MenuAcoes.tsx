@@ -33,6 +33,10 @@ const FOLGA = 6;
  * A lista é desenhada no `body`, não ao lado do botão: a tabela rola na
  * horizontal e qualquer `overflow` no caminho cortaria fora o que passasse da
  * borda. Por isso a posição é medida do botão e a lista é `fixed`.
+ *
+ * Teclado, como se espera de um menu: ao abrir, o foco vai para a primeira
+ * opção; setas sobem e descem, Home e End vão às pontas, Esc fecha e devolve
+ * o foco à engrenagem.
  */
 export default function MenuAcoes({ acoes, rotulo }: Props) {
   const [aberto, setAberto] = useState(false);
@@ -58,7 +62,9 @@ export default function MenuAcoes({ acoes, rotulo }: Props) {
   }, []);
 
   useLayoutEffect(() => {
-    if (aberto) medir();
+    if (!aberto) return;
+    medir();
+    lista.current?.querySelector<HTMLButtonElement>("[role=menuitem]:not(:disabled)")?.focus();
   }, [aberto, medir]);
 
   useEffect(() => {
@@ -70,7 +76,29 @@ export default function MenuAcoes({ acoes, rotulo }: Props) {
       if (!dentro) setAberto(false);
     };
     const aoTeclar = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setAberto(false);
+      if (e.key === "Escape") {
+        setAberto(false);
+        alvo.current?.focus();
+        return;
+      }
+
+      const itens = [
+        ...(lista.current?.querySelectorAll<HTMLButtonElement>("[role=menuitem]:not(:disabled)") ?? []),
+      ];
+      if (itens.length === 0) return;
+      const atual = itens.indexOf(document.activeElement as HTMLButtonElement);
+
+      const destino =
+        e.key === "ArrowDown" ? (atual + 1) % itens.length
+        : e.key === "ArrowUp" ? (atual - 1 + itens.length) % itens.length
+        : e.key === "Home" ? 0
+        : e.key === "End" ? itens.length - 1
+        : -1;
+
+      if (destino >= 0) {
+        e.preventDefault();
+        itens[destino].focus();
+      }
     };
 
     document.addEventListener("pointerdown", aoTocarFora);
@@ -95,6 +123,7 @@ export default function MenuAcoes({ acoes, rotulo }: Props) {
       <button
         key={a.rotulo}
         type="button"
+        role="menuitem"
         className={`menu-item ${a.perigo ? "menu-item--perigo" : ""}`}
         disabled={Boolean(a.impedida)}
         title={a.impedida}
@@ -116,6 +145,7 @@ export default function MenuAcoes({ acoes, rotulo }: Props) {
         type="button"
         className={`menu-alvo ${aberto ? "menu-alvo--aberto" : ""}`}
         aria-label={`Ações de ${rotulo}`}
+        aria-haspopup="menu"
         aria-expanded={aberto}
         onClick={() => setAberto((v) => !v)}
       >
@@ -129,6 +159,7 @@ export default function MenuAcoes({ acoes, rotulo }: Props) {
             ref={lista}
             className="menu-lista"
             role="menu"
+            aria-label={`Ações de ${rotulo}`}
             style={{ top: posicao.top, left: posicao.left, width: LARGURA }}
           >
             {comuns.map(item)}

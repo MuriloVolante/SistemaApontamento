@@ -5,7 +5,7 @@ import Icone from "@/components/Icone";
 import { agruparPorOsEtapa, ordenarGrupos } from "@/lib/agrupar";
 import type { CriterioGrupo, GrupoOs } from "@/lib/agrupar";
 import CardsTotais from "@/app/painel/Totais";
-import { formatarDuracaoCurta, formatarHora } from "@/lib/tempo";
+import { dataLocalISO, formatarData, formatarDuracaoCurta, formatarHora } from "@/lib/tempo";
 import type { LinhaApontamento, Totais } from "@/lib/tipos";
 
 interface Props {
@@ -144,7 +144,10 @@ function CartaoGrupo({
                 <Icone nome={e.tipo === "PAUSA" ? "pausa" : "operacao"} tamanho={11} />
               </span>
               <span className="evento-horas">
-                {formatarHora(e.inicio)} a {formatarHora(e.fim)}
+                {formatarHora(e.inicio)} a{" "}
+                {/* Se atravessou a meia-noite, o fim diz de que dia é. */}
+                {dataLocalISO(e.fim) !== dataLocalISO(e.inicio) && `${formatarData(e.fim)} `}
+                {formatarHora(e.fim)}
               </span>
               <span className="evento-duracao">{formatarDuracaoCurta(e.duracao_segundos)}</span>
               {e.tipo === "PAUSA" && e.justificativa && (
