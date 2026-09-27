@@ -27,7 +27,7 @@ const FOLGA = 6;
  *
  * Quatro botões por linha numa tabela viram uma parede de texto, e no celular
  * nem cabem. Aqui a linha mostra um alvo só e as opções aparecem quando são
- * pedidas — com ícone em cada uma, e a exclusão em vermelho, no fim, separada
+ * pedidas, com ícone em cada uma, e a exclusão em vermelho, no fim, separada
  * das outras por uma linha, para não ser clicada por inércia.
  *
  * A lista é desenhada no `body`, não ao lado do botão: a tabela rola na

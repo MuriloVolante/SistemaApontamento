@@ -4,7 +4,7 @@ import type { LinhaApontamento } from "./tipos";
 /**
  * Um bloco de trabalho: a mesma OS, na mesma etapa, no mesmo dia.
  *
- * A tabela de apontamentos é um log de eventos — serve para auditoria, não
+ * A tabela de apontamentos é um log de eventos: serve para auditoria, não
  * para decidir. Agrupada assim, ela responde direto o que o gestor pergunta:
  * quanto aquela OS consumiu naquela etapa, quanto disso foi parada e por quê.
  */

@@ -76,7 +76,7 @@ export default function TelaOperador() {
   }, [router, sincronizar]);
 
   // Reconfere o estado periodicamente e sempre que a aba volta ao primeiro
-  // plano — o tempo correu no banco enquanto o navegador esteve fechado.
+  // plano, porque o tempo correu no banco enquanto o navegador esteve fechado.
   useEffect(() => {
     if (!etapaId) return;
 

@@ -18,7 +18,7 @@ interface Props {
   aoMudarBusca: (ativa: boolean) => void;
   /**
    * Modo do vendedor: onde a OS está e por onde passou, sem nada de tempo.
-   * Sem os totais, sem a coluna de duração e sem o cronômetro do cartão — o
+   * Sem os totais, sem a coluna de duração e sem o cronômetro do cartão, porque o
    * acesso dele é para consultar a OS, não para medir produção.
    */
   consultaApenas?: boolean;

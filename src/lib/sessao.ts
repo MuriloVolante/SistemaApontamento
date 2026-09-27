@@ -27,7 +27,7 @@ export interface SessaoLida extends SessaoUsuario {
  * ninguém é desconectado quando o servidor reinicia.
  *
  * `fixarConfiguracao` só grava se ainda não houver valor e devolve o que ficou
- * valendo — o Next levanta mais de um processo, e dois sorteando ao mesmo
+ * valendo, porque o Next levanta mais de um processo, e dois sorteando ao mesmo
  * tempo precisam terminar com a mesma chave.
  */
 async function segredo(): Promise<string> {

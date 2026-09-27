@@ -17,7 +17,7 @@ function carimbo(): string {
 
 /**
  * Alinha à direita as colunas de duração em TODAS as seções da tabela.
- * `columnStyles` só vale para o corpo — sem isto o cabeçalho e o rodapé saem
+ * `columnStyles` só vale para o corpo, e sem isto o cabeçalho e o rodapé saem
  * desalinhados em relação aos números.
  */
 function alinharColunas(colunasDireita: number[]) {

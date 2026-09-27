@@ -70,7 +70,7 @@ create index if not exists apontamentos_inicio_idx    on apontamentos (inicio);
 /**
  * Etapas criadas na primeira execução, quando o banco ainda está vazio: são as
  * máquinas e os setores da gráfica. Depois disso quem manda é o cadastro do
- * painel — esta lista não volta a ser consultada.
+ * painel, e esta lista não volta a ser consultada.
  */
 const ETAPAS_INICIAIS = [
   "GOSS",

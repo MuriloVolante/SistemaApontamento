@@ -3,7 +3,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 
 /**
- * IBM Plex Sans — desenho industrial, conservador e de leitura excelente em
+ * IBM Plex Sans: desenho industrial, conservador e de leitura excelente em
  * tela. Os arquivos ficam no próprio repositório (`src/fontes`), não em CDN:
  * a aplicação roda no chão de fábrica e precisa funcionar sem internet.
  *

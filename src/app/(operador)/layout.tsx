@@ -4,7 +4,7 @@ import Transicao from "@/components/Transicao";
 
 /**
  * Grupo de rotas do operador: a tela de apontamento e a escolha da etapa.
- * O parêntese no nome da pasta é só organização — não entra na URL.
+ * O parêntese no nome da pasta é só organização, não entra na URL.
  *
  * Existe para as duas telas compartilharem a mesma transição deslizante.
  */

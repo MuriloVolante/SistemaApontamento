@@ -25,7 +25,7 @@ const INTERVALO_RESERVA = 15_000;
  * Quedas do fluxo, e em que janela de tempo, para desistir dele de vez.
  *
  * Em hospedagem sem processo fixo (Vercel e afins) a conexão é cortada ao
- * atingir o tempo máximo da função — o EventSource reconecta, é cortado de
+ * atingir o tempo máximo da função, o EventSource reconecta, é cortado de
  * novo, e cada volta levanta uma instância nova lendo o banco. Quatro quedas
  * em dois minutos é o sinal de que aquele servidor não segura um fluxo aberto:
  * melhor assumir a consulta periódica e parar de insistir. Numa queda
@@ -36,7 +36,7 @@ const JANELA_DE_QUEDAS = 120_000;
 
 export default function Dashboard() {
   // O vendedor entra aqui para uma coisa só: saber onde está a OS do cliente.
-  // Nada de totais do dia nem de cronômetros — só a busca e o que ela responde.
+  // Nada de totais do dia nem de cronômetros, só a busca e o que ela responde.
   const consultaApenas = useUsuario().tipo === "VENDEDOR";
 
   const [sessoes, setSessoes] = useState<SessaoAtiva[]>([]);

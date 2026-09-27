@@ -76,7 +76,7 @@ export type Resultado<T = null> =
  * Perfis de acesso ao painel.
  *
  * GESTOR vê tudo: dashboard, histórico, relatórios, etapas e usuários.
- * VENDEDOR vê só o dashboard — é onde ele descobre em que máquina está o
+ * VENDEDOR vê só a consulta de OS, que é onde ele descobre em que máquina está o
  * material do cliente que acabou de ligar.
  *
  * A tela de apontamento não entra nisto: continua sem login, como manda a

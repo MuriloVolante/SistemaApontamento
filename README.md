@@ -21,7 +21,7 @@ o que deixa a navegação instantânea: as telas já vão compiladas e minificad
 em vez de serem montadas na primeira visita.
 
 Para mexer no código, use `desenvolver.bat`, que recarrega sozinho a cada
-alteração. É mais lento para navegar — é o preço do recarregamento automático.
+alteração. É mais lento para navegar, é o preço do recarregamento automático.
 
 Os dois modos gravam em pastas separadas (`.next` para produção, `.next-dev`
 para desenvolvimento). Isso não é detalhe: quando dividiam a mesma pasta, rodar
@@ -29,7 +29,7 @@ o modo de desenvolvimento sobrescrevia pedaços do build de produção e o
 `iniciar.bat` seguinte falhava com `Cannot find module './XXX.js'`.
 
 Se por qualquer motivo o sistema não subir, apague a pasta `.next` e rode o
-`iniciar.bat` de novo — ele recompila do zero. Nenhum dado se perde: o banco
+`iniciar.bat` de novo, que recompila do zero. Nenhum dado se perde: o banco
 fica em `dados/`.
 
 Pelo terminal:
@@ -46,7 +46,7 @@ de ambiente**. O banco é um arquivo SQLite criado sozinho em
 
 ### O que esperar na primeira vez
 
-1. Como nenhuma máquina foi configurada ainda, a aplicação abre em `/configurar` —
+1. Como nenhuma máquina foi configurada ainda, a aplicação abre em `/configurar`,
    toque na etapa desta máquina.
 2. A partir daí `http://localhost:3000` já cai direto na tela dessa etapa.
 3. Para trocar a etapa depois, use a seta **←** no canto superior esquerdo da
@@ -57,7 +57,7 @@ de ambiente**. O banco é um arquivo SQLite criado sozinho em
 
 ### Mexer no banco
 
-O arquivo `dados/apontamento.db` é um SQLite comum — abre no
+O arquivo `dados/apontamento.db` é um SQLite comum, abre no
 [DB Browser for SQLite](https://sqlitebrowser.org/) se você quiser espiar os
 dados. Para **zerar tudo**, feche o sistema e apague a pasta `dados/`; ela é
 recriada e semeada na próxima execução.
@@ -76,7 +76,7 @@ recriada e semeada na próxima execução.
 | Tipografia | IBM Plex Sans e Mono, hospedadas no próprio projeto |
 
 Leituras e gravações passam por **server actions**, então todos os timestamps
-vêm do relógio do servidor — o cronômetro nunca depende do relógio do navegador
+vêm do relógio do servidor, e o cronômetro nunca depende do relógio do navegador
 do operador.
 
 A camada de dados é uma interface só (`src/lib/repositorio.ts`) com duas
@@ -86,7 +86,7 @@ implementações que gravam o mesmo esquema. A escolha é automática:
 - as duas **preenchidas** → Supabase.
 
 Ou seja: rodar local não exige decisão nenhuma, e migrar para a nuvem depois é
-só preencher duas variáveis — sem tocar em uma linha das telas.
+só preencher duas variáveis, sem tocar em uma linha das telas.
 
 ### Dimensionamento
 
@@ -94,7 +94,7 @@ O sistema foi ajustado para o uso real: **até 18 computadores conectados** e
 **até 15 etapas** ao mesmo tempo.
 
 O ponto que mais importa nessa conta é o tempo real. Existe **um único** relógio
-no servidor lendo o banco uma vez por segundo, não um por navegador conectado —
+no servidor lendo o banco uma vez por segundo, não um por navegador conectado:
 as 18 telas assinam esse mesmo relógio. E o pacote só é enviado quando o estado
 muda de verdade: com a fábrica parada, o tráfego é zero. Uma leitura envolve
 duas consultas sobre tabelas minúsculas (no máximo uma sessão por etapa, ou seja
@@ -131,7 +131,7 @@ pontos de virada bruscos. No celular a tela do operador vira uma coluna só e o
 cronômetro sobe para o topo, que é o que o operador confere primeiro; as abas
 do painel rolam na horizontal e a tabela rola dentro da própria moldura.
 
-**Movimento.** Curto e discreto — 110 ms a 300 ms, sempre com saída suave.
+**Movimento.** Curto e discreto, de 110 ms a 300 ms, sempre com saída suave.
 Entrada de tela ao trocar de página, modal que cresce do centro, elevação leve
 no hover, afundamento no clique, e um cartão que surge quando uma OS nova
 começa (os que já estão na tela não piscam a cada atualização). Quem tiver
@@ -155,13 +155,13 @@ Parado ──Iniciar(OS)──▶ Em andamento ──Parar(motivo)──▶ Paus
 - **Finalizar** pede confirmação, fecha o segmento em aberto e libera a etapa para a próxima OS.
 
 O fim de um segmento é exatamente o início do seguinte, sem lacuna, e todos os
-instantes são truncados ao segundo — a soma das durações fecha com o tempo total
+instantes são truncados ao segundo, e a soma das durações fecha com o tempo total
 do ciclo.
 
 Fechar o navegador não perde nada: o apontamento em curso fica na tabela
 `sessoes` e o cronômetro é sempre recalculado por diferença de timestamps a
 partir de `segmento_inicio`. O `localStorage` guarda apenas qual etapa esta
-máquina aponta — nunca estado nem tempo decorrido.
+máquina aponta, nunca estado nem tempo decorrido.
 
 ### Uma etapa de cada vez
 
@@ -174,7 +174,7 @@ seis controles juntos com quatro deles apagados:
 | Em andamento | Cronômetro em bloco verde, com **Parar** e **Finalizar** |
 | Pausado | Cronômetro em bloco âmbar com o motivo, e **Retomar** e **Finalizar** |
 
-O motivo da parada é pedido num diálogo ao tocar em **Parar** — com Cancelar
+O motivo da parada é pedido num diálogo ao tocar em **Parar**, com Cancelar
 e Parar, e o Parar bloqueado enquanto o motivo estiver vazio. **Finalizar**
 pede confirmação em diálogo próprio.
 
@@ -191,14 +191,14 @@ Quatro telas, em uma barra de navegação no topo.
 
 Uma **busca de OS** no topo, para quando o cliente liga perguntando do
 material: digita-se o número exato e a tela mostra em que etapa a OS está, se
-está em andamento ou pausada e há quanto tempo — ou avisa que ela não está em
+está em andamento ou pausada e há quanto tempo, ou avisa que ela não está em
 operação, indicando a última etapa por onde passou. Abaixo, os totais e todo o
 histórico daquela OS. O cartão de situação é alimentado pelo fluxo ao vivo,
 então o cronômetro dele corre sozinho.
 
 Sem busca ativa, o dashboard mostra o que está acontecendo agora:
 
-- os três cards — Tempo Total, Tempo em Operação e Tempo em Pausa — com os
+- os três cards, Tempo Total, Tempo em Operação e Tempo em Pausa, com os
   totais **do dia de hoje**;
 - um card por **OS em andamento**, com o número da OS, a etapa, o cronômetro
   do estado atual e, quando pausada, o motivo da parada.
@@ -214,12 +214,12 @@ servidor, igual à tela do operador.
 ### Histórico
 
 A tabela completa de apontamentos. Os filtros ficam numa **lateral fixa** que
-acompanha a rolagem — OS (busca parcial), Etapa e Data. Abaixo de 1080 px ela
+acompanha a rolagem: OS (busca parcial), Etapa e Data. Abaixo de 1080 px ela
 vira um painel recolhível no topo, com a contagem de filtros ativos.
 
 A coluna **`#` é o identificador do registro**: um sequencial por ordem de
 criação, gravado no banco. Ele fica preso à linha, então filtrando por Pausa a
-tabela mostra `#2`, `#4`, `#6` — e não `1`, `2`, `3`.
+tabela mostra `#2`, `#4`, `#6`, e não `1`, `2`, `3`.
 
 **Toda coluna ordena.** Clique no cabeçalho para ordenar em ordem crescente,
 clique de novo para inverter. A seta mostra o sentido em que os valores crescem
@@ -229,13 +229,13 @@ registros.
 
 **Os três cards são o filtro por tipo.** Clicar em "Tempo em Operação" recorta
 a tabela para Operação e acende o card; clicar de novo desfaz. Por isso não
-existe um campo "Tipo" nos filtros — seria a mesma coisa duas vezes. Os totais
+existe um campo "Tipo" nos filtros, seria a mesma coisa duas vezes. Os totais
 continuam calculados sobre a consulta inteira, senão o card clicado zeraria os
 outros dois.
 
 #### No celular
 
-Abaixo de 760 px a tabela deixa de caber e o histórico troca de forma — não
+Abaixo de 760 px a tabela deixa de caber e o histórico troca de forma, não
 por CSS, mas trocando a árvore: só uma das duas existe no DOM.
 
 A tabela é um log de eventos, boa para auditoria e ruim para decidir. No
@@ -246,11 +246,11 @@ não por evento:
   card de pausa;
 - uma barra de operação contra pausa no lugar das colunas Tipo, Início, Fim e
   Tempo;
-- as justificativas de parada somadas no card — "banheiro (3× · 45s)";
+- as justificativas de parada somadas no card, como "banheiro (3× · 45s)";
 - tocar no card abre a linha do tempo, com os horários evento a evento.
 
 A ordenação padrão é por maior tempo, com um atalho para maior percentual
-parado — nunca pelo `#`, que numa tela pequena não diz nada. O botão de
+parado, nunca pelo `#`, que numa tela pequena não diz nada. O botão de
 filtros abre um painel que sobe do rodapé, e o relatório vira botão
 flutuante.
 
@@ -269,7 +269,7 @@ operador e continua no histórico e nos relatórios.
 
 ### Relatórios
 
-Um formulário de parâmetros — Data Início, Data Fim, OS e Etapa — que vale para
+Um formulário de parâmetros, com Data Início, Data Fim, OS e Etapa, que vale para
 os dois relatórios:
 
 - **Analítico:** um apontamento por linha, com os três totais no cabeçalho.
@@ -310,7 +310,7 @@ Os dados do SQLite local **não** são migrados automaticamente.
 Como não há login (regra 1), o banco não pode ficar aberto ao papel anônimo:
 a chave publicável de um projeto Supabase viaja no navegador de qualquer
 visitante, e com RLS liberada ela daria leitura, escrita e exclusão direto pela
-API REST — bastaria abrir o console do navegador.
+API REST, bastaria abrir o console do navegador.
 
 Então o acesso é só pelo servidor. As variáveis não levam o prefixo
 `NEXT_PUBLIC_` (que embutiria o valor no pacote do navegador), o
@@ -320,13 +320,13 @@ navegador fala com o Supabase.
 
 ## Acesso ao painel
 
-A tela de apontamento **não tem login** — é a primeira regra do sistema, e
+A tela de apontamento **não tem login**, é a primeira regra do sistema, e
 ninguém vai digitar senha para apertar Iniciar no meio do turno. O login existe
 só para o painel de gestão.
 
 A tela do vendedor é a mesma rota do dashboard, montada de outro jeito: barra
 de busca, o cartão da situação da OS e as etapas por onde ela passou. Sem
-totais do dia, sem cronômetro e sem a coluna de duração — o acesso dele é para
+totais do dia, sem cronômetro e sem a coluna de duração, porque o acesso dele é para
 responder ao cliente que ligou, não para medir produção.
 
 | Perfil | O que vê |
@@ -344,7 +344,7 @@ usuário: gestor
 senha:   senha12345
 ```
 
-Ele entra já no formulário de troca de senha — a senha padrão não sobrevive ao
+Ele entra já no formulário de troca de senha, e a senha padrão não sobrevive ao
 primeiro uso. Depois disso, cadastre as pessoas em **Painel → Usuários**.
 
 ### Como funcionam as senhas
@@ -352,7 +352,7 @@ primeiro uso. Depois disso, cadastre as pessoas em **Painel → Usuários**.
 Todo usuário nasce com `senha12345` e com a troca obrigatória ligada; quem
 entra com ela é levado direto para "Crie a sua senha", com confirmação e
 mínimo de seis caracteres. **Resetar senha** devolve a senha padrão e religa a
-troca obrigatória — serve para quem esqueceu a própria.
+troca obrigatória, e serve para quem esqueceu a própria.
 
 As senhas são guardadas com `scrypt` e sal por senha, nunca em texto. Quem
 abrisse o arquivo do banco não leria nenhuma.
@@ -360,14 +360,14 @@ abrisse o arquivo do banco não leria nenhuma.
 ### Onde o acesso é conferido
 
 Esconder uma aba não protege nada: a ação continuaria alcançável por quem
-soubesse chamá-la. Então a conferência é do servidor — cada ação verifica o
+soubesse chamá-la. Então a conferência é do servidor: cada ação verifica o
 perfil antes de devolver qualquer dado, e verifica **no banco**, não no cookie,
 de modo que inativar, excluir ou mudar o perfil de alguém vale na hora, sem
 esperar a sessão vencer.
 
 O cookie de sessão é assinado com uma chave sorteada na primeira execução e
 guardada no banco: nada a configurar, e ninguém cai quando o servidor
-reinicia. Ele não é marcado como `secure` de propósito — a gráfica acessa o
+reinicia. Ele não é marcado como `secure` de propósito, porque a gráfica acessa o
 painel por http, no endereço da máquina na rede local, e um cookie `secure`
 simplesmente nunca seria enviado.
 
@@ -376,7 +376,7 @@ simplesmente nunca seria enviado.
 ### Depois de atualizar o sistema
 
 O navegador guarda a tela que carregou. Se uma aba ficou aberta durante a
-atualização, ela continua rodando o código antigo — a tela parece a mesma, mas
+atualização, ela continua rodando o código antigo: a tela parece a mesma, mas
 sem o que mudou. Depois de reiniciar o `iniciar.bat`, feche e abra a aba de cada
 máquina (ou `Ctrl` + `F5`).
 
@@ -387,7 +387,7 @@ relógio no servidor. Isso pressupõe um **processo que fica de pé**: é o caso
 `iniciar.bat` num PC da gráfica, de um container ou de hospedagens como Render
 e Railway.
 
-Em hospedagem sem processo fixo — Vercel e afins — a conexão é cortada ao
+Em hospedagem sem processo fixo, como Vercel e afins, a conexão é cortada ao
 atingir o tempo máximo da função, e cada reconexão levanta uma instância nova
 lendo o banco. O painel detecta isso (quatro quedas em dois minutos), desiste do
 fluxo e passa a consultar a cada 15 segundos. Continua correto e atualizado,

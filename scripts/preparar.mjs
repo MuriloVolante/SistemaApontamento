@@ -2,7 +2,7 @@
  * Garante que existe um build de produção íntegro e atualizado antes de subir.
  *
  * O modo de desenvolvimento compila cada tela na primeira visita e serve
- * código não minificado — a navegação fica lenta. Em produção tudo já vem
+ * código não minificado, e a navegação fica lenta. Em produção tudo já vem
  * pronto. Aqui o build só roda quando o código mudou, então a partida do dia a
  * dia é imediata.
  *
@@ -41,7 +41,7 @@ function percorrer(alvo, aoEncontrar) {
   }
 }
 
-/** Impressão digital pelo conteúdo — um `git pull` que reescreve arquivos
+/** Impressão digital pelo conteúdo: um `git pull` que reescreve arquivos
  *  idênticos não obriga a recompilar. */
 function impressaoDigital() {
   const resumo = crypto.createHash("sha1");

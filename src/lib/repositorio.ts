@@ -98,7 +98,7 @@ export interface Repositorio {
  *
  * Sem prefixo `NEXT_PUBLIC_` de propósito: o que leva esse prefixo é embutido
  * no pacote que vai para o navegador, e a chave de acesso ao banco não pode
- * sair do servidor. Ninguém no navegador fala com o Supabase — todo o acesso
+ * sair do servidor. Ninguém no navegador fala com o Supabase, todo o acesso
  * passa pelas Server Actions.
  */
 export function usandoSupabase(): boolean {
@@ -109,7 +109,7 @@ export function usandoSupabase(): boolean {
 
 /**
  * Nomes usados até a versão anterior. Se sobraram na configuração, é quase
- * certo que a intenção era usar Supabase — e cair calado no SQLite local
+ * certo que a intenção era usar Supabase, e cair calado no SQLite local
  * significaria gravar produção num arquivo que ninguém vai olhar.
  */
 function avisarVariaveisAntigas(): void {

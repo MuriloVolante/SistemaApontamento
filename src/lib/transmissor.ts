@@ -6,7 +6,7 @@ import type { AtualizacaoAoVivo } from "./tipos";
  *
  * Existe **um** relógio no servidor lendo o banco, não um por navegador
  * conectado: com 18 máquinas abertas continua sendo uma leitura por segundo no
- * total. A leitura é barata (duas consultas sobre tabelas minúsculas — há no
+ * total. A leitura é barata (duas consultas sobre tabelas minúsculas, há no
  * máximo uma sessão por etapa) e o pacote só é enviado quando muda de verdade,
  * então uma tela parada não gera tráfego nenhum.
  */

@@ -18,7 +18,7 @@ export function ProvedorUsuario({
 /**
  * Quem está no painel, para as telas decidirem o que mostrar.
  *
- * Vem de cima, do layout que já conferiu a sessão no servidor — assim nenhuma
+ * Vem de cima, do layout que já conferiu a sessão no servidor, assim nenhuma
  * tela precisa perguntar de novo. Serve para montar a tela, nunca para
  * autorizar: quem autoriza são as ações do servidor.
  */

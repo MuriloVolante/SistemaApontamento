@@ -11,7 +11,7 @@ interface Props {
 
 /**
  * Gestão de etapas no rodapé do painel: listar, adicionar, renomear, inativar.
- * Etapa com apontamentos vinculados só pode ser inativada — a exclusão é
+ * Etapa com apontamentos vinculados só pode ser inativada, e a exclusão é
  * recusada pelo servidor. Etapa inativa some da tela do operador, mas segue
  * disponível nos filtros e nos relatórios.
  */

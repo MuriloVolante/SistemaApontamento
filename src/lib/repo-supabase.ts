@@ -19,8 +19,8 @@ import type {
  *
  * Esta classe só existe no servidor: é carregada por `import()` dentro de
  * Server Actions e a chave nunca entra no pacote do navegador. As tabelas têm
- * RLS ligada e nenhuma política, de modo que o papel anônimo — cuja chave
- * qualquer visitante teria — não lê nem grava nada pela API REST.
+ * RLS ligada e nenhuma política, de modo que o papel anônimo, cuja chave
+ * qualquer visitante teria, não lê nem grava nada pela API REST.
  */
 interface RegistroBruto {
   id: string;

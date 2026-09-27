@@ -94,7 +94,7 @@ export async function excluirEtapa(id: string): Promise<Resultado> {
 }
 
 // =====================================================================
-// Apontamento — tela do operador
+// Apontamento: tela do operador
 // =====================================================================
 
 /**
@@ -114,7 +114,7 @@ export async function obterEstado(etapaId: string): Promise<EstadoEtapa> {
  *
  * Serve de aviso na hora de iniciar: pode ser retrabalho, pode ser uma
  * segunda passagem normal, e quem sabe disso é quem está na máquina. Não
- * bloqueia nada — só informa.
+ * bloqueia nada, só informa.
  */
 export async function conferirPassagem(etapaId: string, numeroOs: string): Promise<boolean> {
   const os = numeroOs.trim();

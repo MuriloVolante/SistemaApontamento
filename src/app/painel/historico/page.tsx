@@ -171,7 +171,6 @@ export default function Historico() {
   const primeiroIndice = (paginaAtual - 1) * POR_PAGINA;
   const linhasDaPagina = linhasVisiveis.slice(primeiroIndice, primeiroIndice + POR_PAGINA);
 
-  const nomeEtapaFiltro = etapas.find((e) => e.id === etapaId)?.nome ?? "Todas";
   const filtrosAtivos =
     (os.trim() ? 1 : 0) + (etapaId ? 1 : 0) + (data ? 1 : 0) + (recorte ? 1 : 0);
 
@@ -388,7 +387,7 @@ export default function Historico() {
               {linhasVisiveis.length > 0 && (
                 <div className="paginacao">
                   <span className="paginacao-info">
-                    Mostrando {primeiroIndice + 1}–{primeiroIndice + linhasDaPagina.length} de{" "}
+                    Mostrando {primeiroIndice + 1} a {primeiroIndice + linhasDaPagina.length} de{" "}
                     {linhasVisiveis.length} registros
                   </span>
                   <div className="paginacao-controles">
@@ -437,7 +436,8 @@ export default function Historico() {
 
       {relatorioAberto && (
         <ModalRelatorio
-          herdado={{ os, etapaId, nomeEtapa: nomeEtapaFiltro, tipo: recorte ?? "" }}
+          herdado={{ os, etapaId, tipo: recorte ?? "" }}
+          etapas={etapas}
           aoFechar={() => setRelatorioAberto(false)}
         />
       )}

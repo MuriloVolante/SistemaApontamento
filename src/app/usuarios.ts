@@ -6,7 +6,7 @@ import { exigirGestor, lerSessao } from "@/lib/sessao";
 import type { Resultado, TipoAcesso, Usuario } from "@/lib/tipos";
 
 /**
- * Gestão de usuários do painel. Toda ação daqui exige ser gestor — a conferência
+ * Gestão de usuários do painel. Toda ação daqui exige ser gestor, e a conferência
  * é do servidor, não da tela: esconder um botão não protege nada, porque a
  * ação continuaria alcançável por quem soubesse chamá-la.
  */
@@ -122,7 +122,7 @@ export async function excluirUsuario(id: string): Promise<Resultado> {
  * Tirar este usuário deixaria o sistema sem nenhum gestor ativo?
  *
  * Sem esta trava dá para chegar a um banco em que ninguém consegue mais
- * cadastrar ninguém — e a saída seria mexer no banco na mão.
+ * cadastrar ninguém, e a saída seria mexer no banco na mão.
  */
 async function semOutroGestorAtivo(id: string): Promise<boolean> {
   const usuarios = await (await repositorio()).listarUsuarios();

@@ -22,7 +22,7 @@ const CRITERIOS: Array<{ chave: CriterioGrupo; rotulo: string }> = [
 /**
  * Histórico no celular: um card por OS/etapa/dia, não por evento.
  *
- * A tabela completa é um log — responde "o que aconteceu às 14h32", que é
+ * A tabela completa é um log: responde "o que aconteceu às 14h32", que é
  * pergunta de auditoria. Aqui a leitura é de decisão: quanto a OS consumiu
  * naquela etapa, que fatia disso foi parada e por quê. Os horários evento a
  * evento continuam disponíveis, um toque abaixo.
@@ -144,7 +144,7 @@ function CartaoGrupo({
                 <Icone nome={e.tipo === "PAUSA" ? "pausa" : "operacao"} tamanho={11} />
               </span>
               <span className="evento-horas">
-                {formatarHora(e.inicio)} – {formatarHora(e.fim)}
+                {formatarHora(e.inicio)} a {formatarHora(e.fim)}
               </span>
               <span className="evento-duracao">{formatarDuracaoCurta(e.duracao_segundos)}</span>
               {e.tipo === "PAUSA" && e.justificativa && (

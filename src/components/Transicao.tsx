@@ -13,7 +13,7 @@ interface Props {
  * Troca de tela deslizante.
  *
  * Só a tela que entra é animada. A primeira versão mantinha também a tela
- * que saía, para imitar a troca de área de trabalho — mas as duas camadas
+ * que saía, para imitar a troca de área de trabalho, mas as duas camadas
  * ficavam sobrepostas a poucos pixels e o resultado era texto fantasma, não
  * deslize. Fazer aquilo direito exigiria travar a rolagem, congelar a altura
  * e recortar na janela; não compensa numa tela de chão de fábrica.

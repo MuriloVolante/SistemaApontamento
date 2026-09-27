@@ -9,7 +9,7 @@ interface Props {
   children: React.ReactNode;
   /**
    * "centro" é o diálogo comum; "inferior" sobe do rodapé, que é o gesto
-   * esperado num celular — fica ao alcance do polegar.
+   * esperado num celular, fica ao alcance do polegar.
    */
   variante?: "centro" | "inferior";
 }
@@ -19,7 +19,7 @@ interface Props {
  *
  * Isso não é detalhe de organização: qualquer ancestral com animação de
  * `transform` vira bloco de contenção e faz o `position: fixed` do fundo se
- * medir por ele, e não pela janela — foi o que deixou o escurecido cobrindo
+ * medir por ele, e não pela janela. Foi o que deixou o escurecido cobrindo
  * só o miolo da tela. Saindo da árvore, o fundo cobre a janela inteira.
  */
 export default function Modal({ titulo, aoFechar, children, variante = "centro" }: Props) {

@@ -1,5 +1,5 @@
 /**
- * Ícones no traço do Iconoir (MIT) — geométricos, de linha fina e uniforme.
+ * Ícones no traço do Iconoir (MIT): geométricos, de linha fina e uniforme.
  *
  * Os caminhos ficam embutidos aqui em vez de virem de uma biblioteca: são
  * poucos, não acrescentam dependência nem peso ao pacote, e a aplicação roda

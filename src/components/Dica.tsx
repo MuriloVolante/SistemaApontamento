@@ -14,7 +14,7 @@ interface Props {
  * Dica de canto: um "i" que abre a explicação ao passar o mouse ou tocar.
  *
  * É um botão, não um `title` do navegador, por dois motivos: o `title` só
- * aparece depois de um segundo parado com o mouse em cima — e no celular não
+ * aparece depois de um segundo parado com o mouse em cima, e no celular não
  * aparece nunca. Aqui o toque abre e o toque fora fecha.
  */
 export default function Dica({ children, sobre }: Props) {

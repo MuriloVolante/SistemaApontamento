@@ -15,7 +15,7 @@ type Etapa = "ENTRADA" | "NOVA_SENHA";
  *
  * Duas etapas na mesma tela: a entrada e, quando a senha ainda é a provisória,
  * a definição da senha de verdade. Elas não são telas separadas porque é um
- * caminho só — quem acabou de provar a senha provisória já está no meio dele.
+ * caminho só, e quem acabou de provar a senha provisória já está no meio dele.
  */
 export default function TelaLogin() {
   const router = useRouter();

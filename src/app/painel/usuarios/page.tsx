@@ -368,8 +368,8 @@ export default function TelaUsuarios() {
             value={tipoEditado}
             onChange={(e) => setTipoEditado(e.target.value as TipoAcesso)}
           >
-            <option value="VENDEDOR">Vendedor — consulta OS</option>
-            <option value="GESTOR">Gestor — faz tudo</option>
+            <option value="VENDEDOR">Vendedor</option>
+            <option value="GESTOR">Gestor</option>
           </select>
 
           {erro && <p className="erro">{erro}</p>}

@@ -24,7 +24,7 @@ async function garantirGestorInicial(): Promise<void> {
     await repo.criarUsuario(GESTOR_INICIAL, "GESTOR", embaralhar(SENHA_PADRAO));
   } catch {
     // Dois processos subindo juntos: o segundo encontra o nome já usado e
-    // pode seguir em frente — o que importava era existir um gestor.
+    // pode seguir em frente, o que importava era existir um gestor.
   }
 }
 

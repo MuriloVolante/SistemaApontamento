@@ -10,7 +10,7 @@ const INTERVALO_BATIMENTO = 25_000;
 
 /**
  * Fluxo de eventos do dashboard (SSE). O navegador abre uma vez e o servidor
- * empurra cada mudança — nada de ficar perguntando de tempos em tempos nem de
+ * empurra cada mudança, nada de ficar perguntando de tempos em tempos nem de
  * atualizar a página na mão. O EventSource reconecta sozinho se a conexão cair.
  */
 export async function GET(requisicao: Request): Promise<Response> {

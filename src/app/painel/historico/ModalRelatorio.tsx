@@ -7,11 +7,13 @@ import Dica from "@/components/Dica";
 import { consultarApontamentos, relatorioSintetico } from "../../consultas";
 import { gerarPdfAnalitico, gerarPdfSintetico } from "@/lib/pdf";
 import { formatarData, limitesLocais } from "@/lib/tempo";
-import type { Tipo } from "@/lib/tipos";
+import type { Etapa, Tipo } from "@/lib/tipos";
 
 interface Props {
-  /** Filtros que já estão valendo na tela, herdados sem redigitar. */
-  herdado: { os: string; etapaId: string; nomeEtapa: string; tipo: "" | Tipo };
+  /** Filtros que já estão valendo na tela: entram prontos, sem redigitar. */
+  herdado: { os: string; etapaId: string; tipo: "" | Tipo };
+  /** Para o seletor de etapa do próprio diálogo. */
+  etapas: Etapa[];
   aoFechar: () => void;
 }
 
@@ -21,15 +23,24 @@ const ROTULO_TIPO: Record<string, string> = {
   PAUSA: "Pausa",
 };
 
-export default function ModalRelatorio({ herdado, aoFechar }: Props) {
+export default function ModalRelatorio({ herdado, etapas, aoFechar }: Props) {
   const [dataInicio, setDataInicio] = useState("");
   const [dataFim, setDataFim] = useState("");
+
+  // Os filtros da tela são o ponto de partida, não uma amarra: o relatório
+  // costuma ser um recorte vizinho do que se estava olhando, e obrigar a
+  // fechar o diálogo para mexer numa data seria um vaivém à toa.
+  const [os, setOs] = useState(herdado.os);
+  const [etapaId, setEtapaId] = useState(herdado.etapaId);
+  const [tipo, setTipo] = useState<"" | Tipo>(herdado.tipo);
   const [gerando, setGerando] = useState<"" | "ANALITICO" | "SINTETICO">("");
   const [erro, setErro] = useState<string | null>(null);
 
+  const nomeEtapa = etapaId ? etapas.find((e) => e.id === etapaId)?.nome ?? "Todas" : "Todas";
+
   function filtro() {
     const { deISO, ateISO } = limitesLocais(dataInicio || undefined, dataFim || undefined);
-    return { os: herdado.os, etapaId: herdado.etapaId, tipo: herdado.tipo, deISO, ateISO };
+    return { os, etapaId, tipo, deISO, ateISO };
   }
 
   function criterios(): string[] {
@@ -42,9 +53,9 @@ export default function ModalRelatorio({ herdado, aoFechar }: Props) {
 
     return [
       `Período: ${periodo}`,
-      `OS: ${herdado.os.trim() ? `contém "${herdado.os.trim()}"` : "todas"}   |   Etapa: ${
-        herdado.nomeEtapa
-      }   |   Tipo: ${ROTULO_TIPO[herdado.tipo]}`,
+      `OS: ${os.trim() ? `contém "${os.trim()}"` : "todas"}   |   Etapa: ${nomeEtapa}   |   Tipo: ${
+        ROTULO_TIPO[tipo]
+      }`,
     ];
   }
 
@@ -79,19 +90,55 @@ export default function ModalRelatorio({ herdado, aoFechar }: Props) {
 
   return (
     <Modal titulo="Gerar relatório em PDF" aoFechar={aoFechar}>
-      {/* Os filtros da tela entram prontos; aqui só se escolhe o período. */}
-      <div className="modal-herdado">
-        <span className="modal-herdado-titulo">O que vai entrar no relatório</span>
-        <div className="modal-fichas">
-          <span className="ficha">
-            OS: <strong>{herdado.os.trim() || "todas"}</strong>
-          </span>
-          <span className="ficha">
-            Etapa: <strong>{herdado.nomeEtapa}</strong>
-          </span>
-          <span className="ficha">
-            Tipo: <strong>{ROTULO_TIPO[herdado.tipo]}</strong>
-          </span>
+      {/* Os filtros da tela entram prontos e continuam editáveis aqui. */}
+      <div className="modal-filtros">
+        <div className="modal-filtro modal-filtro--largo">
+          <label className="campo-rotulo" htmlFor="rel-os">
+            OS
+          </label>
+          <input
+            id="rel-os"
+            className="campo"
+            type="text"
+            placeholder="Todas"
+            value={os}
+            onChange={(e) => setOs(e.target.value)}
+          />
+        </div>
+
+        <div className="modal-filtro">
+          <label className="campo-rotulo" htmlFor="rel-etapa">
+            Etapa
+          </label>
+          <select
+            id="rel-etapa"
+            className="campo"
+            value={etapaId}
+            onChange={(e) => setEtapaId(e.target.value)}
+          >
+            <option value="">Todas</option>
+            {etapas.map((e) => (
+              <option key={e.id} value={e.id}>
+                {e.nome}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="modal-filtro">
+          <label className="campo-rotulo" htmlFor="rel-tipo">
+            Tipo
+          </label>
+          <select
+            id="rel-tipo"
+            className="campo"
+            value={tipo}
+            onChange={(e) => setTipo(e.target.value as "" | Tipo)}
+          >
+            <option value="">Todos</option>
+            <option value="OPERACAO">Operação</option>
+            <option value="PAUSA">Pausa</option>
+          </select>
         </div>
       </div>
 
@@ -162,7 +209,7 @@ export default function ModalRelatorio({ herdado, aoFechar }: Props) {
               {gerando === "SINTETICO" ? "Gerando…" : "Sintético"}
               {gerando !== "SINTETICO" && (
                 <Dica sobre="o relatório sintético">
-                  Uma linha por etapa — ou seja, por máquina ou setor: o tempo total,
+                  Uma linha por etapa, ou seja, por máquina ou setor: o tempo total,
                   quanto tempo rodou e quanto tempo ficou parada. É o relatório para
                   bater o olho e comparar.
                 </Dica>

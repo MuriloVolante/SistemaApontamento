@@ -1,5 +1,5 @@
 /* =====================================================================
-   Sistema de Apontamento Gráfico — sistema visual
+   Sistema de Apontamento Gráfico: sistema visual
 
    Sóbrio, minimalista e com acabamento. Paleta neutra fria com um único
    acento em azul-petróleo; cores fortes ficam reservadas para significado
@@ -7,7 +7,7 @@
    tudo que é número, para os dígitos não dançarem.
 
    Escala fluida: a interface acompanha de um celular a um monitor grande
-   sem quebra, e o movimento é curto e discreto — nunca decorativo.
+   sem quebra, e o movimento é curto e discreto, nunca decorativo.
    ===================================================================== */
 
 :root {
@@ -615,7 +615,7 @@ textarea {
 }
 
 /* ---------------------------------------------------------------------
-   Painel — navbar
+   Painel: navbar
    --------------------------------------------------------------------- */
 
 .navbar {
@@ -748,7 +748,7 @@ textarea {
 }
 
 /* ---------------------------------------------------------------------
-   Painel — conteúdo
+   Painel: conteúdo
    --------------------------------------------------------------------- */
 
 .painel {
@@ -1304,7 +1304,7 @@ table.tabela tbody tr:last-child td {
 }
 
 /* ---------------------------------------------------------------------
-   Dashboard — OS em andamento
+   Dashboard: OS em andamento
    --------------------------------------------------------------------- */
 
 .os-grade {
@@ -1313,7 +1313,7 @@ table.tabela tbody tr:last-child td {
   gap: clamp(10px, 1.4vw, 14px);
 }
 
-/* A animação roda só quando o cartão entra na tela — ou seja, quando uma
+/* A animação roda só quando o cartão entra na tela, ou seja, quando uma
    OS nova começa. Os que já estão lá não piscam a cada atualização. */
 .os-cartao {
   position: relative;
@@ -1432,7 +1432,7 @@ table.tabela tbody tr:last-child td {
 }
 
 /* ---------------------------------------------------------------------
-   Dashboard — busca de OS
+   Dashboard: busca de OS
    --------------------------------------------------------------------- */
 
 .busca {
@@ -1626,7 +1626,7 @@ table.tabela tbody tr:last-child td {
 }
 
 /* ---------------------------------------------------------------------
-   Histórico — filtros na lateral
+   Histórico: filtros na lateral
    --------------------------------------------------------------------- */
 
 .historico {
@@ -1687,7 +1687,7 @@ table.tabela tbody tr:last-child td {
 }
 
 /* ---------------------------------------------------------------------
-   Histórico no celular — um card por OS
+   Histórico no celular: um card por OS
    --------------------------------------------------------------------- */
 
 /* Critério de ordenação dos blocos. */
@@ -2162,42 +2162,28 @@ table.tabela tbody tr:last-child td {
    Modal de relatório
    --------------------------------------------------------------------- */
 
-.modal-herdado {
-  background: var(--superficie-2);
-  border: 1px solid var(--borda);
-  border-radius: var(--raio);
-  padding: 11px 13px;
+/* Filtros do relatório: herdados da tela e editáveis aqui mesmo. */
+.modal-filtros {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
 }
 
-.modal-herdado-titulo {
-  display: block;
-  font-size: 0.68rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.09em;
-  color: var(--tinta-fraca);
-  margin-bottom: 9px;
-}
-
-.modal-fichas {
+.modal-filtro {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+  flex-direction: column;
+  min-width: 0;
 }
 
-.ficha {
-  background: var(--superficie);
-  border: 1px solid var(--borda-media);
-  border-radius: 999px;
-  padding: 3px 11px;
-  font-size: 0.78rem;
-  color: var(--tinta-fraca);
-  overflow-wrap: anywhere;
+.modal-filtro--largo {
+  grid-column: 1 / -1;
 }
 
-.ficha strong {
-  color: var(--tinta);
-  font-weight: 600;
+@media (max-width: 520px) {
+  .modal-filtros {
+    grid-template-columns: 1fr;
+  }
 }
 
 .modal-periodo {
@@ -2215,7 +2201,7 @@ table.tabela tbody tr:last-child td {
 
 .relatorio-opcao {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 12px;
   width: 100%;
   padding: 13px 14px;
@@ -2247,7 +2233,6 @@ table.tabela tbody tr:last-child td {
 
 .relatorio-opcao-icone {
   flex: 0 0 auto;
-  margin-top: 2px;
   color: var(--acento);
 }
 
@@ -2270,7 +2255,7 @@ table.tabela tbody tr:last-child td {
 }
 
 /* ---------------------------------------------------------------------
-   Dica de canto — o "i" que explica sem ocupar a tela
+   Dica de canto: o "i" que explica sem ocupar a tela
    --------------------------------------------------------------------- */
 
 .dica {
@@ -2318,8 +2303,22 @@ table.tabela tbody tr:last-child td {
   background: var(--escuro);
   border-radius: var(--raio);
   box-shadow: var(--sombra-m);
-  animation: surgir 140ms var(--saida-suave) both;
+  /* Animação própria em vez de `surgir`: aquela termina em `transform: none`
+     e, com `fill-mode: both`, apagava o translateX que centra o balão no
+     ícone. A seta ficava apontando para o lado. */
+  animation: surgir-dica 140ms var(--saida-suave) both;
   pointer-events: none;
+}
+
+@keyframes surgir-dica {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%);
+  }
 }
 
 /* A setinha que aponta para o "i". */
@@ -2339,6 +2338,7 @@ table.tabela tbody tr:last-child td {
     left: auto;
     right: -8px;
     transform: none;
+    animation: surgir 140ms var(--saida-suave) both;
   }
 
   .dica-balao::after {
