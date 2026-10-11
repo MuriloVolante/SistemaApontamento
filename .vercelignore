@@ -1,0 +1,13 @@
+# O que nunca sobe para a Vercel num deploy feito pela linha de comando.
+# Banco local, builds desta maquina e credenciais ficam aqui.
+node_modules
+.next
+.next-dev
+out
+*.tsbuildinfo
+dados
+.env
+.env.local
+.claude
+iniciar.bat
+desenvolver.bat

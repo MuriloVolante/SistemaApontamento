@@ -467,7 +467,10 @@ nenhuma o sistema fica no SQLite local.
 3. Entre no painel com o usuário `gestor` e a senha padrão; o sistema pede a
    senha nova na hora.
 
-Serve qualquer Postgres, não só o Neon: basta a `DATABASE_URL`.
+Serve qualquer Postgres, não só o Neon: basta a `DATABASE_URL`. O
+`vercel.json` fixa as funções em São Paulo (`gru1`), perto do banco e da
+gráfica, e o `.vercelignore` impede que um deploy pela linha de comando leve
+o banco local, os builds desta máquina ou credenciais.
 
 #### Supabase
 
