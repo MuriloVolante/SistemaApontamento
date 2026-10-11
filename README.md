@@ -106,7 +106,7 @@ alteradas depois, por decisão do dono do sistema, e a alteração está anotada
 |---|---|
 | Aplicação | Next.js 15 (App Router) + React 19 + TypeScript |
 | Banco (local) | SQLite em arquivo, via `better-sqlite3` |
-| Banco (nuvem, opcional) | Supabase / Postgres |
+| Banco (nuvem, opcional) | Postgres direto (Neon) ou Supabase |
 | Relatórios | jsPDF + jspdf-autotable (PDF) e write-excel-file (Excel), carregados só na hora de gerar |
 | Tempo real | Server-Sent Events (nativo, sem biblioteca) |
 | Tipografia | IBM Plex Sans, hospedada no próprio projeto |
@@ -451,8 +451,25 @@ simplesmente nunca seria enviado.
 
 ## Publicar na nuvem (só quando quiser)
 
-O sistema roda 100% local sem isso. Se um dia precisar que várias máquinas do
-chão de fábrica compartilhem o mesmo banco:
+O sistema roda 100% local sem isso. Para pôr na internet (uma versão para o
+cliente avaliar, ou máquinas em lugares diferentes no mesmo banco), há dois
+caminhos. O banco é escolhido pelas variáveis de ambiente: `DATABASE_URL`
+preenchida usa Postgres direto, as duas do Supabase usam Supabase, e sem
+nenhuma o sistema fica no SQLite local.
+
+#### Vercel com Neon (Postgres direto)
+
+1. Importe o repositório num projeto da Vercel e, na aba **Storage** dele,
+   crie um banco **Neon** e conecte ao projeto. A integração cadastra a
+   `DATABASE_URL` sozinha.
+2. Faça o deploy. Na primeira conexão o sistema cria as tabelas e as 30
+   etapas; não há script para rodar à mão.
+3. Entre no painel com o usuário `gestor` e a senha padrão; o sistema pede a
+   senha nova na hora.
+
+Serve qualquer Postgres, não só o Neon: basta a `DATABASE_URL`.
+
+#### Supabase
 
 1. Crie um projeto no [Supabase](https://supabase.com) e rode
    [`supabase/schema.sql`](supabase/schema.sql) no SQL Editor. O arquivo pode
@@ -542,6 +559,7 @@ src/
   lib/
     repositorio.ts           interface da camada de dados e escolha do banco
     repo-sqlite.ts           implementação local (padrão), com a migração
+    repo-postgres.ts         Postgres direto, como o Neon (com DATABASE_URL)
     repo-supabase.ts         implementação em nuvem (opcional)
     sessao.ts                cookie de sessão e as travas de acesso
     senha.ts                 scrypt, conferência e regras da senha nova

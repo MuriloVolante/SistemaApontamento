@@ -30,9 +30,10 @@ export interface ProximoSegmento {
 }
 
 /**
- * Camada de dados. Duas implementações: SQLite local (padrão, arquivo no
- * próprio computador) e Supabase (usada apenas se as variáveis de ambiente
- * estiverem preenchidas). As duas gravam exatamente o mesmo esquema.
+ * Camada de dados. Três implementações, todas com o mesmo esquema: SQLite
+ * local (padrão, arquivo no próprio computador), Postgres direto (Neon ou
+ * outro, quando `DATABASE_URL` está preenchida) e Supabase (quando as duas
+ * variáveis dele estão preenchidas).
  */
 export interface Repositorio {
   listarEtapas(apenasAtivas: boolean): Promise<Etapa[]>;
@@ -117,7 +118,19 @@ export function usandoSupabase(): boolean {
   );
 }
 
+/**
+ * Postgres direto quando houver `DATABASE_URL`: é a variável que a integração
+ * do Neon na Vercel cria sozinha ao conectar o banco ao projeto.
+ */
+export function usandoPostgres(): boolean {
+  return Boolean(process.env.DATABASE_URL?.trim());
+}
+
 async function criar(): Promise<Repositorio> {
+  if (usandoPostgres()) {
+    const { RepositorioPostgres } = await import("./repo-postgres");
+    return new RepositorioPostgres();
+  }
   if (usandoSupabase()) {
     const { RepositorioSupabase } = await import("./repo-supabase");
     return new RepositorioSupabase();
